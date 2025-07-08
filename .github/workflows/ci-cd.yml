@@ -15,7 +15,9 @@ jobs:
       - name: Setup JFrog CLI
         uses: jfrog/setup-jfrog-cli@v3
         with:
-          version: 2.x
+          version: 2.77
+          disable-job-summary: false
+          disable-auto-build-publish: false
         env:
           JF_URL: ${{ secrets.JFROG_URL }}
           JF_USER: ${{ secrets.JFROG_USER }}
