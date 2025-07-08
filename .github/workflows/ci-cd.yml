@@ -1,0 +1,65 @@
+name: 'Inventory-Service CI/CD Pipeline'
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v3
+        with:
+          version: 2.x
+        env:
+          JF_URL: ${{ secrets.JFROG_URL }}
+          JF_USER: ${{ secrets.JFROG_USER }}
+          JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
+
+      - name: Configure Artifactory for Python
+        run: |
+          jfrog rt pip-config --repo-resolve=bookverse-pypi --project=bookverse
+
+      - name: Install Python dependencies with JFrog CLI
+        run: |
+          # This command installs dependencies and records them in the build-info
+          jfrog rt pip-install requirements.txt --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }} --project=bookverse
+
+      - name: Set Version
+        id: set_version
+        run: echo "VERSION=1.3.0" >> $GITHUB_ENV # Manually set version for demo
+
+      - name: Build and Push Backend Image
+        run: |
+          # We pass the JFrog credentials as build-args to the Dockerfile
+          jfrog rt docker-push --image-file=Dockerfile.backend \
+          --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }} --project=bookverse \
+          --build-arg="JFROG_URL=${{ secrets.JFROG_URL }};JFROG_USER=${{ secrets.JFROG_USER }};JFROG_ACCESS_TOKEN=${{ secrets.JFROG_ACCESS_TOKEN }}" \
+          ${{ secrets.JFROG_URL }}/bookverse-docker-dev/${{ github.event.repository.name }}-backend:${{ env.VERSION }}
+
+      - name: Build and Push Frontend Image
+        run: |
+          jfrog rt docker-push --image-file=Dockerfile.frontend \
+          --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }} --project=bookverse \
+          ${{ secrets.JFROG_URL }}/bookverse-docker-dev/${{ github.event.repository.name }}-frontend:${{ env.VERSION }}
+
+      - name: Collect Git info and Publish Build Info
+        run: |
+          jfrog rt build-collect-git ${{ github.event.repository.name }} ${{ github.run_number }} --project=bookverse
+          jfrog rt build-publish ${{ github.event.repository.name }} ${{ github.run_number }} --project=bookverse
+
+      - name: Create Microservice Release Bundle
+        run: |
+          # This is the final step that creates the immutable release candidate in RLM
+          jfrog rt rbc ${{ github.event.repository.name }} ${{ env.VERSION }} --project=bookverse --spec='{
+            "queries": [
+              {
+                "query": "items.find({\"type\":\"docker\", \"repo\":\"bookverse-docker-dev\", \"@build.name\":\"${{ github.event.repository.name }}\", \"@build.number\":\"${{ github.run_number }}\"})"
+              }
+            ]
+          }' --sign=true
