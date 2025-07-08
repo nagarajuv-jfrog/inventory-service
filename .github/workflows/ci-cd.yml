@@ -13,14 +13,10 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup JFrog CLI
-        uses: jfrog/setup-jfrog-cli@v3
-        with:
-          version: 2.77
-          disable-job-summary: false
-          disable-auto-build-publish: false
+        uses: jfrog/setup-jfrog-cli@v4
         env:
-          JF_URL: ${{ secrets.JFROG_URL }}
-          JF_USER: ${{ secrets.JFROG_USER }}
+          JF_URL: ${{ vars.JFROG_URL }}
+          JF_USER: ${{ vars.JFROG_USER }}
           JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
 
       - name: Configure Artifactory for Python
@@ -29,7 +25,8 @@ jobs:
 
       - name: Install Python dependencies with JFrog CLI
         run: |
-          # This command installs dependencies and records them in the build-info
+          # The --build-name and --build-number flags are crucial. They tell the JFrog CLI
+          # to associate the downloaded dependencies with a specific build record.
           jfrog rt pip-install requirements.txt --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }} --project=bookverse
 
       - name: Set Version
@@ -38,26 +35,37 @@ jobs:
 
       - name: Build and Push Backend Image
         run: |
-          # We pass the JFrog credentials as build-args to the Dockerfile
+          # Similarly, the --build-name and --build-number flags associate the
+          # published Docker image with the same build record.
           jfrog rt docker-push --image-file=Dockerfile.backend \
           --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }} --project=bookverse \
-          --build-arg="JFROG_URL=${{ secrets.JFROG_URL }};JFROG_USER=${{ secrets.JFROG_USER }};JFROG_ACCESS_TOKEN=${{ secrets.JFROG_ACCESS_TOKEN }}" \
-          ${{ secrets.JFROG_URL }}/bookverse-docker-dev/${{ github.event.repository.name }}-backend:${{ env.VERSION }}
+          --build-arg="JFROG_URL=${{ vars.JFROG_URL }};JFROG_USER=${{ vars.JFROG_USER }};JFROG_ACCESS_TOKEN=${{ secrets.JFROG_ACCESS_TOKEN }}" \
+          ${{ vars.JFROG_URL }}/bookverse-docker-dev/${{ github.event.repository.name }}-backend:${{ env.VERSION }}
 
       - name: Build and Push Frontend Image
         run: |
           jfrog rt docker-push --image-file=Dockerfile.frontend \
           --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }} --project=bookverse \
-          ${{ secrets.JFROG_URL }}/bookverse-docker-dev/${{ github.event.repository.name }}-frontend:${{ env.VERSION }}
+          ${{ vars.JFROG_URL }}/bookverse-docker-dev/${{ github.event.repository.name }}-frontend:${{ env.VERSION }}
 
-      - name: Collect Git info and Publish Build Info
+      - name: Collect Environment Variables for Build Info
         run: |
-          jfrog rt build-collect-git ${{ github.event.repository.name }} ${{ github.run_number }} --project=bookverse
+          # This step enriches the build-info by adding all environment variables
+          # starting with 'GITHUB_' (like GITHUB_SHA, GITHUB_REF) as metadata.
+          # This creates a rich, traceable record of the build environment.
+          jfrog rt build-add-env ${{ github.event.repository.name }} ${{ github.run_number }} --project=bookverse
+
+      - name: Publish Build Info
+        run: |
+          # This is the final and most important build-info step. It gathers all the
+          # information collected in the previous steps (dependencies, docker images, env/git info)
+          # and publishes it to Artifactory as a single, immutable build record.
           jfrog rt build-publish ${{ github.event.repository.name }} ${{ github.run_number }} --project=bookverse
 
       - name: Create Microservice Release Bundle
         run: |
           # This is the final step that creates the immutable release candidate in RLM
+          # using the build we just published as its source.
           jfrog rt rbc ${{ github.event.repository.name }} ${{ env.VERSION }} --project=bookverse --spec='{
             "queries": [
               {
