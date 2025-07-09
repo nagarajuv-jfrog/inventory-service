@@ -24,11 +24,12 @@ jobs:
 
       - name: Configure Artifactory for Python
         run: |
-          jfrog rt pip-config --repo-resolve=bookverse-pypi
+          jfrog pipc --repo-resolve=bookverse-pypi
 
       - name: Install Python dependencies with JFrog CLI
         run: |
-          jfrog rt pip-install requirements.txt
+          # The build name and number are picked up automatically from the environment variables.
+          jfrog pip install -r requirements.txt
 
       - name: Set Version
         id: set_version
@@ -45,32 +46,29 @@ jobs:
             --build-arg JFROG_USER=${{ vars.JFROG_USER }} \
             --build-arg JFROG_ACCESS_TOKEN=${{ secrets.JFROG_ACCESS_TOKEN }} \
             -f Dockerfile.backend .
-          jfrog rt docker-push $IMAGE_TAG bookverse-docker-dev
+          jfrog rt dp $IMAGE_TAG bookverse-docker-dev
 
       - name: Build and Push Frontend Image
         run: |
           IMAGE_TAG="${{ vars.JFROG_URL }}/bookverse-docker-dev/${{ github.event.repository.name }}-frontend:${{ env.VERSION }}"
           docker build --pull -t $IMAGE_TAG -f Dockerfile.frontend .
-          jfrog rt docker-push $IMAGE_TAG bookverse-docker-dev
+          jfrog rt dp $IMAGE_TAG bookverse-docker-dev
+
+      - name: Collect Git information for Build Info
+        run: |
+          jfrog rt bag
 
       - name: Collect Environment Variables for Build Info
         run: |
-          # This step enriches the build-info by adding all environment variables
-          # starting with 'GITHUB_'. The build name and number are picked up automatically.
-          jfrog rt build-add-env
+          jfrog rt bce
 
       - name: Publish Build Info
         run: |
-          # This is the final and most important build-info step. It gathers all the
-          # information collected in the previous steps and publishes it to Artifactory.
-          # The build name and number are picked up automatically.
-          jfrog rt build-publish
+          jfrog rt bp
 
       - name: Create Microservice Release Bundle
         run: |
-          # This is the final step that creates the immutable release candidate in RLM
-          # using the build we just published as its source.
-          jfrog rt rbc ${{ github.event.repository.name }} ${{ env.VERSION }} --spec='{
+          jfrog rbc ${{ github.event.repository.name }} ${{ env.VERSION }} --spec='{
             "queries": [
               {
                 "query": "items.find({\"type\":\"docker\", \"repo\":\"bookverse-docker-dev\", \"@build.name\":\"${{ github.event.repository.name }}\", \"@build.number\":\"${{ github.run_number }}\"})"
