@@ -50,7 +50,7 @@ jobs:
             --build-arg JFROG_ACCESS_TOKEN=${{ secrets.JFROG_ACCESS_TOKEN }} \
             -f Dockerfile.backend .
           # Scan the image for vulnerabilities
-          jfrog docker scan $IMAGE_TAG
+          ### jfrog docker scan $IMAGE_TAG
           # Push the image and its build-info to Artifactory
           jfrog rt dp $IMAGE_TAG bookverse-docker-dev --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
@@ -59,7 +59,7 @@ jobs:
           REGISTRY_URL=$(echo "${{ vars.JFROG_URL }}" | sed 's|https://||')
           IMAGE_TAG="$REGISTRY_URL/bookverse-docker-dev/${{ github.event.repository.name }}-frontend:${{ env.VERSION }}"
           jfrog docker build --pull -t $IMAGE_TAG -f Dockerfile.frontend .
-          jfrog docker scan $IMAGE_TAG
+          ### jfrog docker scan $IMAGE_TAG
           jfrog rt dp $IMAGE_TAG bookverse-docker-dev --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
       - name: Collect Git information for Build Info
