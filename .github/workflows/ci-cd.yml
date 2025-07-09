@@ -30,7 +30,7 @@ jobs:
       - name: Install Python dependencies with JFrog CLI
         run: |
           # The build name and number are picked up automatically from the environment variables.
-          jfrog pip install -r requirements.txt
+          jfrog pip install -r requirements.txt --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
       - name: Set Unique Version
         id: set_version
@@ -48,26 +48,26 @@ jobs:
             --build-arg JFROG_USER=${{ vars.JFROG_USER }} \
             --build-arg JFROG_ACCESS_TOKEN=${{ secrets.JFROG_ACCESS_TOKEN }} \
             -f Dockerfile.backend .
-          jfrog rt dp $IMAGE_TAG bookverse-docker-dev
+          jfrog rt dp $IMAGE_TAG bookverse-docker-dev --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
       - name: Build and Push Frontend Image
         run: |
           REGISTRY_URL=$(echo "${{ vars.JFROG_URL }}" | sed 's|https://||')
           IMAGE_TAG="$REGISTRY_URL/bookverse-docker-dev/${{ github.event.repository.name }}-frontend:${{ env.VERSION }}"
           docker build --pull -t $IMAGE_TAG -f Dockerfile.frontend .
-          jfrog rt dp $IMAGE_TAG bookverse-docker-dev
+          jfrog rt dp $IMAGE_TAG bookverse-docker-dev --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
       - name: Collect Git information for Build Info
         run: |
-          jfrog rt bag ${{ github.event.repository.name }} ${{ github.run_number }}
+          jfrog rt bag 
 
       - name: Collect Environment Variables for Build Info
         run: |
-          jfrog rt bce ${{ github.event.repository.name }} ${{ github.run_number }}
+          jfrog rt bce 
 
       - name: Publish Build Info
         run: |
-          jfrog rt bp ${{ github.event.repository.name }} ${{ github.run_number }}
+          jfrog rt bp 
 
       - name: Create Microservice Release Bundle
         run: |
