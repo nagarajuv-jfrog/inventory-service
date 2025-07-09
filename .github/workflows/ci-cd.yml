@@ -39,28 +39,32 @@ jobs:
       - name: Login to JFrog Docker Registry
         run: echo "${{ secrets.JFROG_ACCESS_TOKEN }}" | docker login ${{ vars.JFROG_URL }} -u "${{ vars.JFROG_USER }}" --password-stdin
 
-      - name: Build and Push Backend Image
+      - name: Build, Scan, and Push Backend Image
         run: |
           REGISTRY_URL=$(echo "${{ vars.JFROG_URL }}" | sed 's|https://||')
           IMAGE_TAG="$REGISTRY_URL/bookverse-docker-dev/${{ github.event.repository.name }}-backend:${{ env.VERSION }}"
+          # Use 'jfrog docker build' to integrate with build-info
           jfrog docker build --pull -t $IMAGE_TAG \
             --build-arg JFROG_URL=${{ vars.JFROG_URL }} \
             --build-arg JFROG_USER=${{ vars.JFROG_USER }} \
             --build-arg JFROG_ACCESS_TOKEN=${{ secrets.JFROG_ACCESS_TOKEN }} \
             -f Dockerfile.backend .
+          # Scan the image for vulnerabilities
+          jfrog docker scan $IMAGE_TAG
+          # Push the image and its build-info to Artifactory
           jfrog rt dp $IMAGE_TAG bookverse-docker-dev --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
-      - name: Build and Push Frontend Image
+      - name: Build, Scan, and Push Frontend Image
         run: |
           REGISTRY_URL=$(echo "${{ vars.JFROG_URL }}" | sed 's|https://||')
           IMAGE_TAG="$REGISTRY_URL/bookverse-docker-dev/${{ github.event.repository.name }}-frontend:${{ env.VERSION }}"
           jfrog docker build --pull -t $IMAGE_TAG -f Dockerfile.frontend .
+          jfrog docker scan $IMAGE_TAG
           jfrog rt dp $IMAGE_TAG bookverse-docker-dev --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
       - name: Collect Git information for Build Info
         run: |
-          jfrog rt bag 
-          jfrog docker scan
+          jfrog rt bag ${{ github.event.repository.name }} ${{ github.run_number }}
 
       - name: Collect Environment Variables for Build Info
         run: |
@@ -68,7 +72,7 @@ jobs:
 
       - name: Publish Build Info
         run: |
-          jfrog rt bp 
+          jfrog rt bp ${{ github.event.repository.name }} ${{ github.run_number }}
 
       - name: Create Microservice Release Bundle
         run: |
