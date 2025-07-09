@@ -52,9 +52,9 @@ jobs:
 
       - name: Build and Push Frontend Image
         run: |
-          jfrog REGISTRY_URL=$(echo "${{ vars.JFROG_URL }}" | sed 's|https://||')
+          REGISTRY_URL=$(echo "${{ vars.JFROG_URL }}" | sed 's|https://||')
           IMAGE_TAG="$REGISTRY_URL/bookverse-docker-dev/${{ github.event.repository.name }}-frontend:${{ env.VERSION }}"
-          docker build --pull -t $IMAGE_TAG -f Dockerfile.frontend .
+          jfrog docker build --pull -t $IMAGE_TAG -f Dockerfile.frontend .
           jfrog rt dp $IMAGE_TAG bookverse-docker-dev --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
       - name: Collect Git information for Build Info
@@ -72,5 +72,6 @@ jobs:
 
       - name: Create Microservice Release Bundle
         run: |
-          jfrog rbc --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }} ${{ github.event.repository.name }} ${{ env.VERSION }}
+          jfrog rbc --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}\
+           ${{ github.event.repository.name }} ${{ env.VERSION }}
 
