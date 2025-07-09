@@ -32,9 +32,9 @@ jobs:
           # The build name and number are picked up automatically from the environment variables.
           jfrog pip install -r requirements.txt
 
-      - name: Set Version
+      - name: Set Unique Version
         id: set_version
-        run: echo "VERSION=1.3.0" >> $GITHUB_ENV # Manually set version for demo
+        run: echo "VERSION=1.3.0.${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: Login to JFrog Docker Registry
         run: echo "${{ secrets.JFROG_ACCESS_TOKEN }}" | docker login ${{ vars.JFROG_URL }} -u "${{ vars.JFROG_USER }}" --password-stdin
