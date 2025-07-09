@@ -71,5 +71,5 @@ jobs:
 
       - name: Create Microservice Release Bundle
         run: |
-          jfrog rbc --build-name=${{ github.event.repository.name }} --build-number=${{ env.VERSION }} ${{ github.event.repository.name }} ${{ env.VERSION }}
+          jfrog rbc --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }} ${{ github.event.repository.name }} ${{ env.VERSION }}
 
