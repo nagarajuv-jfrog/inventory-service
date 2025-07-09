@@ -21,8 +21,6 @@ jobs:
           JF_PROJECT: "bookverse"
           JFROG_CLI_BUILD_NAME: ${{ github.event.repository.name }}
           JFROG_CLI_BUILD_NUMBER: ${{ github.run_number }}
- //         echo "build name is ${{ JFROG_CLI_BUILD_NAME }}"
- //         echo "build number is ${{ JFROG_CLI_BUILD_NUMBER }}'"
 
       - name: Configure Artifactory for Python
         run: |
