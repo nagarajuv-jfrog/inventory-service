@@ -28,7 +28,6 @@ jobs:
 
       - name: Install Python dependencies with JFrog CLI
         run: |
-          # The build name and number are picked up automatically from the environment variables.
           jfrog rt pip-install requirements.txt
 
       - name: Set Version
