@@ -41,7 +41,8 @@ jobs:
 
       - name: Build and Push Backend Image
         run: |
-          IMAGE_TAG="${{ vars.JFROG_URL }}/bookverse-docker-dev/${{ github.event.repository.name }}-backend:${{ env.VERSION }}"
+          REGISTRY_URL=$(echo "${{ vars.JFROG_URL }}" | sed 's|https://||')
+          IMAGE_TAG="$REGISTRY_URL/bookverse-docker-dev/${{ github.event.repository.name }}-backend:${{ env.VERSION }}"
           docker build --pull -t $IMAGE_TAG \
             --build-arg JFROG_URL=${{ vars.JFROG_URL }} \
             --build-arg JFROG_USER=${{ vars.JFROG_USER }} \
@@ -51,7 +52,8 @@ jobs:
 
       - name: Build and Push Frontend Image
         run: |
-          IMAGE_TAG="${{ vars.JFROG_URL }}/bookverse-docker-dev/${{ github.event.repository.name }}-frontend:${{ env.VERSION }}"
+          REGISTRY_URL=$(echo "${{ vars.JFROG_URL }}" | sed 's|https://||')
+          IMAGE_TAG="$REGISTRY_URL/bookverse-docker-dev/${{ github.event.repository.name }}-frontend:${{ env.VERSION }}"
           docker build --pull -t $IMAGE_TAG -f Dockerfile.frontend .
           jfrog rt dp $IMAGE_TAG bookverse-docker-dev
 
