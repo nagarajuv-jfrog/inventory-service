@@ -77,4 +77,4 @@ jobs:
                 "query": "items.find({\"type\":\"docker\", \"repo\":\"bookverse-docker-dev\", \"@build.name\":\"${{ github.event.repository.name }}\", \"@build.number\":\"${{ github.run_number }}\"})"
               }
             ]
-          }' --sign=true
+          }'
