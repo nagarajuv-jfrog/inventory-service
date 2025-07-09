@@ -59,15 +59,15 @@ jobs:
 
       - name: Collect Git information for Build Info
         run: |
-          jfrog rt bag
+          jfrog rt bag ${{ github.event.repository.name }} ${{ github.run_number }}
 
       - name: Collect Environment Variables for Build Info
         run: |
-          jfrog rt bce
+          jfrog rt bce ${{ github.event.repository.name }} ${{ github.run_number }}
 
       - name: Publish Build Info
         run: |
-          jfrog rt bp
+          jfrog rt bp ${{ github.event.repository.name }} ${{ github.run_number }}
 
       - name: Create Microservice Release Bundle
         run: |
