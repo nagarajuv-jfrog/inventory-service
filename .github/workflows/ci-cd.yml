@@ -8,6 +8,8 @@ on:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.set_version.outputs.VERSION }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -24,38 +26,33 @@ jobs:
 
       - name: Configure Artifactory for Python
         run: |
-          # Configure pip to resolve from our local repository
           jfrog pipc --repo-resolve=bookverse-pypi-local
 
       - name: Install Python dependencies with JFrog CLI
         run: |
-          # The build name and number are picked up automatically from the environment variables.
-          jfrog pip install -r requirements.txt --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
+          jfrog pip install -r requirements.txt
 
-      - name: Set Unique Version
+      - name: Set Unique SemVer Version
         id: set_version
-        run: echo "VERSION=1.3.${{ github.run_number }}" >> $GITHUB_ENV
-
-      - name: Login to JFrog Docker Registry
-        run: echo "${{ secrets.JFROG_ACCESS_TOKEN }}" | docker login ${{ vars.JFROG_URL }} -u "${{ vars.JFROG_USER }}" --password-stdin
+        run: |
+          VERSION="1.3.${{ github.run_number }}"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build and Push Backend Image
         run: |
           REGISTRY_URL=$(echo "${{ vars.JFROG_URL }}" | sed 's|https://||')
-          IMAGE_TAG="$REGISTRY_URL/bookverse-docker-internal/${{ github.event.repository.name }}-backend:${{ env.VERSION }}"
-          # Use 'jfrog docker build' to integrate with build-info
+          IMAGE_TAG="$REGISTRY_URL/bookverse-docker-internal/${{ github.event.repository.name }}-backend:${{ steps.set_version.outputs.VERSION }}"
           jfrog docker build --pull -t $IMAGE_TAG \
             --build-arg JFROG_URL=${{ vars.JFROG_URL }} \
             --build-arg JFROG_USER=${{ vars.JFROG_USER }} \
             --build-arg JFROG_ACCESS_TOKEN=${{ secrets.JFROG_ACCESS_TOKEN }} \
             -f Dockerfile.backend .
-          # Push the image and its build-info to Artifactory
           jfrog rt dp $IMAGE_TAG bookverse-docker-internal --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
       - name: Build and Push Frontend Image
         run: |
           REGISTRY_URL=$(echo "${{ vars.JFROG_URL }}" | sed 's|https://||')
-          IMAGE_TAG="$REGISTRY_URL/bookverse-docker-internal/${{ github.event.repository.name }}-frontend:${{ env.VERSION }}"
+          IMAGE_TAG="$REGISTRY_URL/bookverse-docker-internal/${{ github.event.repository.name }}-frontend:${{ steps.set_version.outputs.VERSION }}"
           jfrog docker build --pull -t $IMAGE_TAG -f Dockerfile.frontend .
           jfrog rt dp $IMAGE_TAG bookverse-docker-internal --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
@@ -73,6 +70,28 @@ jobs:
 
       - name: Create Microservice Release Bundle
         run: |
-          jfrog rbc --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}\
-           ${{ github.event.repository.name }} ${{ env.VERSION }}
+          jfrog rbc ${{ github.event.repository.name }} ${{ steps.set_version.outputs.VERSION }} --project=bookverse --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
+  promote-bundle:
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
+        env:
+          JF_URL: ${{ vars.JFROG_URL }}
+          JF_USER: ${{ vars.JFROG_USER }}
+          JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
+          JF_PROJECT: "bookverse"
+
+      - name: Promote to QA
+        run: |
+          jfrog rbp ${{ github.event.repository.name }} ${{ needs.build-and-publish.outputs.version }} QA --promotion-type=move --include-repos=bookverse-docker-internal
+
+      - name: Promote to STAGE
+        run: |
+          jfrog rbp ${{ github.event.repository.name }} ${{ needs.build-and-publish.outputs.version }} STAGE --promotion-type=move --include-repos=bookverse-docker-internal
+
+      - name: Promote to PROD
+        run: |
+          jfrog rbp ${{ github.event.repository.name }} ${{ needs.build-and-publish.outputs.version }} PROD --promotion-type=move --include-repos=bookverse-docker-internal-prod
