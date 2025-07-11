@@ -42,7 +42,7 @@ jobs:
       - name: Build and Push Backend Image
         run: |
           REGISTRY_URL=$(echo "${{ vars.JFROG_URL }}" | sed 's|https://||')
-          IMAGE_TAG="$REGISTRY_URL/bookverse-docker-dev/${{ github.event.repository.name }}-backend:${{ env.VERSION }}"
+          IMAGE_TAG="$REGISTRY_URL/bookverse-docker-internal/${{ github.event.repository.name }}-backend:${{ env.VERSION }}"
           # Use 'jfrog docker build' to integrate with build-info
           jfrog docker build --pull -t $IMAGE_TAG \
             --build-arg JFROG_URL=${{ vars.JFROG_URL }} \
@@ -50,14 +50,14 @@ jobs:
             --build-arg JFROG_ACCESS_TOKEN=${{ secrets.JFROG_ACCESS_TOKEN }} \
             -f Dockerfile.backend .
           # Push the image and its build-info to Artifactory
-          jfrog rt dp $IMAGE_TAG bookverse-docker-dev --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
+          jfrog rt dp $IMAGE_TAG bookverse-docker-internal --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
       - name: Build and Push Frontend Image
         run: |
           REGISTRY_URL=$(echo "${{ vars.JFROG_URL }}" | sed 's|https://||')
-          IMAGE_TAG="$REGISTRY_URL/bookverse-docker-dev/${{ github.event.repository.name }}-frontend:${{ env.VERSION }}"
+          IMAGE_TAG="$REGISTRY_URL/bookverse-docker-internal/${{ github.event.repository.name }}-frontend:${{ env.VERSION }}"
           jfrog docker build --pull -t $IMAGE_TAG -f Dockerfile.frontend .
-          jfrog rt dp $IMAGE_TAG bookverse-docker-dev --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
+          jfrog rt dp $IMAGE_TAG bookverse-docker-internal --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
       - name: Collect Git information for Build Info
         run: |
