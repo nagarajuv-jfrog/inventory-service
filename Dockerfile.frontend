@@ -1,7 +1,10 @@
-# Use the official Nginx image from Docker Hub
-FROM nginx:1.17-alpine
+# Use an older, more compatible Nginx image to avoid kernel issues in some local K8s environments
+FROM nginx:1.21-alpine
 
-# Set the working directory
+# Copy the custom Nginx configuration first
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Set the working directory for the web content
 WORKDIR /usr/share/nginx/html
 
 # Remove the default Nginx welcome page
