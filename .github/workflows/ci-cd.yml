@@ -73,7 +73,9 @@ jobs:
           jfrog rbc ${{ github.event.repository.name }} ${{ steps.set_version.outputs.VERSION }} --project=bookverse --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
       - name: Create and Attach Build Link Evidence
+        if: secrets.GPG_PRIVATE_KEY
         run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" > private.key
           echo '{
             "statement": {
               "_type": "https://in-toto.io/Statement/v1",
@@ -85,7 +87,7 @@ jobs:
               }
             }
           }' > build-link-evidence.json
-          jfrog evd create --predicate build-link-evidence.json --predicate-type "https://in-toto.io/attestation/link/v0.3" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }} --key=${{ vars.GPG_KEY_NAME }} --project=bookverse
+          jfrog evd create --predicate build-link-evidence.json --predicate-type "https://in-toto.io/attestation/link/v0.3" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }} --key=private.key --project=bookverse
 
   promote-bundle:
     needs: build-and-publish
