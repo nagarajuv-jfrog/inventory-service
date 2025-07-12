@@ -74,8 +74,10 @@ jobs:
 
       - name: Create and Attach Build Link Evidence
         run: |
-          echo '{
-            "statement": {
+          cat <<EOF > build-link-evidence.json
+          {
+            "predicate_type": "https://in-toto.io/attestation/link/v0.3",
+            "predicate": {
               "_type": "https://in-toto.io/Statement/v1",
               "subject": [ { "name": "${{ github.event.repository.name }}", "digest": { "sha256": "${{ github.sha }}" } } ],
               "predicateType": "https://in-toto.io/attestation/link/v0.3",
@@ -84,8 +86,14 @@ jobs:
                 "runId": { "workflow_run_id": "${{ github.run_id }}" }
               }
             }
-          }' > build-link-evidence.json
-          jfrog evd create --predicate build-link-evidence.json --predicate-type "https://in-toto.io/attestation/link/v0.3" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }} --key="${{ secrets.GPG_PRIVATE_KEY }}" --project=bookverse
+          }
+          EOF
+          SUBJECT_PATH="bookverse-docker-internal/${{ github.event.repository.name }}-backend/${{ steps.set_version.outputs.VERSION }}/manifest.json"
+          curl -H "Authorization: Bearer ${{ secrets.JFROG_ACCESS_TOKEN }}" \
+               -H "Content-Type: application/json" \
+               -X POST \
+               -d @build-link-evidence.json \
+               "${{ vars.JFROG_URL }}/evidence/api/v1/subject/${SUBJECT_PATH}"
 
   promote-bundle:
     needs: build-and-publish
