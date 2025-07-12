@@ -105,16 +105,24 @@ jobs:
           timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           cat <<EOF > commit-review.json
           {
-            "attributes": [
-              { "name": "committer", "value": "${{ github.actor }}" },
-              { "name": "reviewer", "value": "code-owner@bookverse.com" },
-              { "name": "review_status", "value": "Approved" },
-              { "name": "review_date", "value": "$timestamp" }
-            ]
+            "predicate_type": "https://in-toto.io/attestation/scai/attribute-report",
+            "predicate": {
+              "attributes": [
+                { "name": "committer", "value": "${{ github.actor }}" },
+                { "name": "reviewer", "value": "code-owner@bookverse.com" },
+                { "name": "review_status", "value": "Approved" },
+                { "name": "review_date", "value": "$timestamp" }
+              ]
+            }
           }
           EOF
-          jfrog evd create --predicate commit-review.json --predicate-type "https://in-toto.io/attestation/scai/attribute-report" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} --key="${{ secrets.GPG_PRIVATE_KEY }}"
-
+          SUBJECT_PATH="bookverse-docker-internal/${{ github.event.repository.name }}-backend/${{ needs.build-and-publish.outputs.version }}/manifest.json"
+          curl -H "Authorization: Bearer ${{ secrets.JFROG_ACCESS_TOKEN }}" \
+               -H "Content-Type: application/json" \
+               -X POST \
+               -d @commit-review.json \
+               "${{ vars.JFROG_URL }}/evidence/api/v1/subject/${SUBJECT_PATH}"
+               
       - name: Promote to DEV
         run: |
           jfrog rbp ${{ github.event.repository.name }} ${{ needs.build-and-publish.outputs.version }} DEV --promotion-type=move --include-repos=bookverse-docker-internal
