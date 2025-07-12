@@ -93,7 +93,7 @@ jobs:
                -H "Content-Type: application/json" \
                -X POST \
                -d @build-link-evidence.json \
-               "${{ vars.JFROG_URL }}/evidence/api/v1/subject/${SUBJECT_PATH}"
+               "${{ vars.JFROG_URL }}/evidence/api/v1/subject/${SUBJECT_PATH}?project=bookverse"
 
   promote-bundle:
     needs: build-and-publish
