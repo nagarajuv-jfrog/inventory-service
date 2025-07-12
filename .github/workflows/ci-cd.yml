@@ -72,6 +72,21 @@ jobs:
         run: |
           jfrog rbc ${{ github.event.repository.name }} ${{ steps.set_version.outputs.VERSION }} --project=bookverse --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
+      - name: Create and Attach Build Link Evidence
+        run: |
+          echo '{
+            "statement": {
+              "_type": "https://in-toto.io/Statement/v1",
+              "subject": [ { "name": "${{ github.event.repository.name }}", "digest": { "sha256": "${{ github.sha }}" } } ],
+              "predicateType": "https://in-toto.io/attestation/link/v0.3",
+              "predicate": {
+                "builder": { "id": "uri:github-actions" },
+                "runId": { "workflow_run_id": "${{ github.run_id }}" }
+              }
+            }
+          }' > build-link-evidence.json
+          jfrog evd create --predicate build-link-evidence.json --predicate-type "https://in-toto.io/attestation/link/v0.3" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }}
+
   promote-bundle:
     needs: build-and-publish
     runs-on: ubuntu-latest
@@ -91,7 +106,7 @@ jobs:
               { "name": "committer", "value": "${{ github.actor }}" },
               { "name": "reviewer", "value": "code-owner@bookverse.com" },
               { "name": "review_status", "value": "Approved" },
-              { "name": "review_date", "value": "${{ 'TZ=UTC' date --iso-8601=seconds }}" }
+              { "name": "review_date", "value": "'$(TZ=UTC date --iso-8601=seconds)'" }
             ]
           }' > commit-review.json
           jfrog evd create --predicate commit-review.json --predicate-type "https://in-toto.io/attestation/scai/attribute-report" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }}
@@ -163,7 +178,7 @@ jobs:
             "attributes": [
               { "name": "quality_gate_passed", "value": true },
               { "name": "approved_by", "value": "product-manager@bookverse.com" },
-              { "name": "approval_date", "value": "${{ 'TZ=UTC' date --iso-8601=seconds }}" }
+              { "name": "approval_date", "value": "'$(TZ=UTC date --iso-8601=seconds)'" }
             ]
           }' > stage-signoff.json
           echo '{
