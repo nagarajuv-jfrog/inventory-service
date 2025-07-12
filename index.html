@@ -194,29 +194,56 @@
 
             const addToCart = (bookId) => {
                 const book = books.find(b => b.id === bookId);
-                if (!book || book.stock === 0) return;
+                if (!book) return;
+
+                if (book.stock <= 0) {
+                    alert('This book is out of stock!');
+                    return;
+                }
+                
+                // Decrement stock in the main books array
+                book.stock--;
 
                 const cartItem = cart.find(item => item.id === bookId);
                 if (cartItem) {
-                    if (book.stock > cartItem.quantity) {
-                        cartItem.quantity++;
-                    } else {
-                        alert('Not enough stock!');
-                    }
+                    cartItem.quantity++;
                 } else {
-                    cart.push({ ...book, quantity: 1 });
+                    // Create a copy of the book for the cart and set quantity to 1
+                    const bookForCart = { ...book, quantity: 1 };
+                    // We already decremented the stock, so we don't want the cart's copy to also have the decremented stock
+                    bookForCart.stock++; 
+                    cart.push(bookForCart);
                 }
+                
+                alert(`'${book.title}' has been added to your cart.`);
                 updateCartCount();
+                renderBooks(); // Re-render to show updated stock
                 if (!checkoutView.classList.contains('hidden')) renderCart();
             };
 
             const removeFromCart = (bookId) => {
-                cart = cart.filter(item => item.id !== bookId);
+                const cartItemIndex = cart.findIndex(item => item.id === bookId);
+                if (cartItemIndex === -1) return;
+
+                const cartItem = cart[cartItemIndex];
+                const bookInStore = books.find(b => b.id === bookId);
+                
+                // Return the stock to the main book list
+                if (bookInStore) {
+                    bookInStore.stock += cartItem.quantity;
+                }
+
+                // Remove from cart
+                cart.splice(cartItemIndex, 1);
+
                 updateCartCount();
+                renderBooks();
                 renderCart();
             };
 
             const handleBuyNow = () => {
+                if (cart.length === 0) return;
+                
                 const buyButton = document.getElementById('buy-now-btn');
                 buyButton.textContent = 'Processing...';
                 buyButton.disabled = true;
@@ -229,15 +256,14 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.message) {
-                        cart.forEach(cartItem => {
-                            const bookInStore = books.find(b => b.id === cartItem.id);
-                            if (bookInStore) bookInStore.stock -= cartItem.quantity;
-                        });
+                        // The stock has already been decremented when adding to cart.
+                        // We just need to clear the cart now.
                         cart = [];
                         updateCartCount();
-                        renderBooks();
                         cartItemsEl.innerHTML = `<p class="text-green-600 font-bold text-center">${data.message}</p>`;
                         cartSummaryEl.innerHTML = '';
+                    } else {
+                        throw new Error(data.error || "Unknown checkout error");
                     }
                 })
                 .catch(err => {
@@ -276,7 +302,6 @@
                     const bookId = parseInt(e.target.dataset.bookId);
                     addToCart(bookId);
                     recommendationModal.classList.remove('active');
-                    alert('Book added to your cart!');
                 }
             });
 
