@@ -16,10 +16,9 @@
             transform: translateY(-8px);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
-        .book-cover {
-            height: 24rem; /* 384px */
-            object-fit: cover;
-        }
+        .book-cover { height: 24rem; object-fit: cover; }
+        .modal { display: none; }
+        .modal.active { display: flex; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -27,82 +26,272 @@
     <!-- Header -->
     <header class="bg-white shadow-md sticky top-0 z-50">
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 005.5 16c1.255 0 2.443-.29 3.5-.804V4.804zM14.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 0014.5 16c1.255 0 2.443-.29 3.5-.804v-10A7.968 7.968 0 0014.5 4z" />
-                </svg>
+            <a href="#" id="nav-home" class="flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-indigo-600" viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 005.5 16c1.255 0 2.443-.29 3.5-.804V4.804zM14.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 0014.5 16c1.255 0 2.443-.29 3.5-.804v-10A7.968 7.968 0 0014.5 4z" /></svg>
                 <h1 class="text-2xl font-bold text-gray-800">BookVerse</h1>
-            </div>
-            <div class="text-sm font-medium text-gray-500">
-                Inventory Service
+            </a>
+            <div class="flex items-center space-x-8">
+                <a href="#" id="nav-recommendation" class="text-gray-600 hover:text-indigo-600">Get a Recommendation</a>
+                <a href="#" id="nav-cart" class="relative text-gray-600 hover:text-indigo-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    <span id="cart-count" class="absolute -top-2 -right-2 bg-indigo-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                </a>
             </div>
         </nav>
     </header>
 
     <!-- Main Content -->
     <main class="container mx-auto px-6 py-12">
-        <div class="text-center mb-12">
-            <h2 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">Welcome to Our Bookstore</h2>
-            <p class="mt-4 text-lg leading-8 text-gray-600">Find your next great read from our curated collection.</p>
-        </div>
+        <!-- Inventory View -->
+        <section id="inventory-view">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">Welcome to Our Bookstore</h2>
+                <p class="mt-4 text-lg leading-8 text-gray-600">Find your next great read from our curated collection.</p>
+            </div>
+            <div id="book-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
+                <!-- Book cards injected here -->
+            </div>
+        </section>
 
-        <!-- Book List -->
-        <div id="book-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
-            <!-- Loading state -->
-            <p id="loading-message" class="text-gray-500 col-span-full text-center">Loading books...</p>
-        </div>
+        <!-- Checkout View -->
+        <section id="checkout-view" class="hidden">
+            <h2 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl mb-8">Your Shopping Cart</h2>
+            <div id="cart-items" class="bg-white p-6 rounded-lg shadow-md">
+                <!-- Cart items injected here -->
+            </div>
+            <div id="cart-summary" class="mt-6 text-right">
+                <!-- Summary injected here -->
+            </div>
+        </section>
     </main>
 
     <!-- Footer -->
     <footer class="bg-white mt-16">
         <div class="container mx-auto px-6 py-8 text-center text-gray-500">
             <p>&copy; 2025 BookVerse. All rights reserved.</p>
-            <p class="text-sm">A Fictional Bookstore for a Demo Application</p>
         </div>
     </footer>
 
+    <!-- Recommendation Modal -->
+    <div id="recommendation-modal" class="modal fixed inset-0 bg-gray-900 bg-opacity-75 items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl p-8 max-w-lg w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-bold">Our Recommendation For You</h3>
+                <button id="close-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+            </div>
+            <div id="modal-book-content"><!-- Recommendation injected here --></div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const bookListEl = document.getElementById('book-list');
-            const loadingMessage = document.getElementById('loading-message');
+            // --- STATE ---
+            let books = [];
+            let cart = [];
 
-            fetch('/api/books')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(books => {
-                    if (loadingMessage) {
-                        loadingMessage.remove();
-                    }
-                    books.forEach(book => {
-                        const bookCard = document.createElement('div');
-                        bookCard.className = 'book-card bg-white rounded-lg shadow-md flex flex-col overflow-hidden';
-                        bookCard.innerHTML = `
-                            <img src="${book.image}" alt="Cover of ${book.title}" class="book-cover w-full">
-                            <div class="p-6 flex flex-col flex-grow">
-                                <h3 class="text-lg font-bold mb-2 text-gray-900">${book.title}</h3>
-                                <p class="text-sm text-gray-600 mb-3">by ${book.author}</p>
-                                <p class="text-gray-700 text-sm mb-4 flex-grow">${book.description}</p>
-                                <div class="flex justify-between items-center mt-auto pt-4 border-t border-gray-200">
-                                    <p class="text-xl font-bold text-indigo-600">$${book.price.toFixed(2)}</p>
-                                    <p class="text-xs font-medium px-2 py-1 rounded-full ${book.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                                        ${book.stock > 0 ? `${book.stock} in stock` : 'Out of stock'}
-                                    </p>
-                                </div>
+            // --- DOM ELEMENTS ---
+            const bookListEl = document.getElementById('book-list');
+            const cartItemsEl = document.getElementById('cart-items');
+            const cartSummaryEl = document.getElementById('cart-summary');
+            const cartCountEl = document.getElementById('cart-count');
+            const inventoryView = document.getElementById('inventory-view');
+            const checkoutView = document.getElementById('checkout-view');
+            const recommendationModal = document.getElementById('recommendation-modal');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const modalBookContent = document.getElementById('modal-book-content');
+
+            // --- NAVIGATION ---
+            document.getElementById('nav-home').addEventListener('click', (e) => { e.preventDefault(); showView('inventory'); });
+            document.getElementById('nav-cart').addEventListener('click', (e) => { e.preventDefault(); showView('checkout'); });
+            document.getElementById('nav-recommendation').addEventListener('click', (e) => { e.preventDefault(); handleGetRecommendation(); });
+
+            const showView = (view) => {
+                inventoryView.classList.toggle('hidden', view !== 'inventory');
+                checkoutView.classList.toggle('hidden', view !== 'checkout');
+                if (view === 'checkout') renderCart();
+            };
+
+            // --- RENDER FUNCTIONS ---
+            const renderBooks = () => {
+                bookListEl.innerHTML = '';
+                books.forEach(book => {
+                    const bookCard = document.createElement('div');
+                    bookCard.className = 'book-card bg-white rounded-lg shadow-md flex flex-col overflow-hidden';
+                    bookCard.innerHTML = `
+                        <img src="${book.image}" alt="Cover of ${book.title}" class="book-cover w-full">
+                        <div class="p-6 flex flex-col flex-grow">
+                            <h3 class="text-lg font-bold mb-2 text-gray-900">${book.title}</h3>
+                            <p class="text-sm text-gray-600 mb-3">by ${book.author}</p>
+                            <p class="text-gray-700 text-sm mb-4 flex-grow">${book.description}</p>
+                            <div class="flex justify-between items-center mt-4">
+                                <p class="text-xl font-bold text-indigo-600">$${book.price.toFixed(2)}</p>
+                                <p class="text-xs font-medium px-2 py-1 rounded-full ${book.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                    ${book.stock > 0 ? `${book.stock} in stock` : 'Out of stock'}
+                                </p>
                             </div>
-                        `;
-                        bookListEl.appendChild(bookCard);
+                            <button data-book-id="${book.id}" class="add-to-cart-btn mt-4 w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                ${book.stock === 0 ? 'disabled' : ''}>
+                                Add to Cart
+                            </button>
+                        </div>`;
+                    bookListEl.appendChild(bookCard);
+                });
+            };
+
+            const renderCart = () => {
+                cartItemsEl.innerHTML = '';
+                if (cart.length === 0) {
+                    cartItemsEl.innerHTML = '<p class="text-gray-500 text-center">Your cart is empty.</p>';
+                    cartSummaryEl.innerHTML = '';
+                    return;
+                }
+
+                cart.forEach(item => {
+                    const cartItemDiv = document.createElement('div');
+                    cartItemDiv.className = 'flex justify-between items-center py-4 border-b';
+                    cartItemDiv.innerHTML = `
+                        <div>
+                            <h4 class="font-bold">${item.title}</h4>
+                            <p class="text-sm text-gray-600">Quantity: ${item.quantity}</p>
+                        </div>
+                        <div class="flex items-center">
+                            <p class="font-semibold mr-4">$${(item.price * item.quantity).toFixed(2)}</p>
+                            <button data-book-id="${item.id}" class="remove-from-cart-btn text-red-500 hover:text-red-700 font-bold">Remove</button>
+                        </div>`;
+                    cartItemsEl.appendChild(cartItemDiv);
+                });
+
+                const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                cartSummaryEl.innerHTML = `
+                    <p class="text-xl font-bold">Total: $${totalPrice.toFixed(2)}</p>
+                    <button id="buy-now-btn" class="mt-4 bg-green-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-600 transition duration-300">
+                        Buy Now
+                    </button>`;
+            };
+            
+            const updateCartCount = () => {
+                cartCountEl.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+            };
+
+            // --- EVENT HANDLERS & LOGIC ---
+            bookListEl.addEventListener('click', (e) => {
+                if (e.target.classList.contains('add-to-cart-btn')) {
+                    const bookId = parseInt(e.target.dataset.bookId);
+                    addToCart(bookId);
+                }
+            });
+
+            cartItemsEl.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-from-cart-btn')) {
+                    const bookId = parseInt(e.target.dataset.bookId);
+                    removeFromCart(bookId);
+                }
+            });
+            
+            cartSummaryEl.addEventListener('click', (e) => {
+                if(e.target.id === 'buy-now-btn') handleBuyNow();
+            });
+
+            const addToCart = (bookId) => {
+                const book = books.find(b => b.id === bookId);
+                if (!book || book.stock === 0) return;
+
+                const cartItem = cart.find(item => item.id === bookId);
+                if (cartItem) {
+                    if (book.stock > cartItem.quantity) {
+                        cartItem.quantity++;
+                    } else {
+                        alert('Not enough stock!');
+                    }
+                } else {
+                    cart.push({ ...book, quantity: 1 });
+                }
+                updateCartCount();
+                if (!checkoutView.classList.contains('hidden')) renderCart();
+            };
+
+            const removeFromCart = (bookId) => {
+                cart = cart.filter(item => item.id !== bookId);
+                updateCartCount();
+                renderCart();
+            };
+
+            const handleBuyNow = () => {
+                const buyButton = document.getElementById('buy-now-btn');
+                buyButton.textContent = 'Processing...';
+                buyButton.disabled = true;
+
+                fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: cart })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.message) {
+                        cart.forEach(cartItem => {
+                            const bookInStore = books.find(b => b.id === cartItem.id);
+                            if (bookInStore) bookInStore.stock -= cartItem.quantity;
+                        });
+                        cart = [];
+                        updateCartCount();
+                        renderBooks();
+                        cartItemsEl.innerHTML = `<p class="text-green-600 font-bold text-center">${data.message}</p>`;
+                        cartSummaryEl.innerHTML = '';
+                    }
+                })
+                .catch(err => {
+                    console.error('Checkout failed:', err);
+                    buyButton.textContent = 'Buy Now';
+                    buyButton.disabled = false;
+                    alert('Checkout failed. Please try again.');
+                });
+            };
+
+            const handleGetRecommendation = () => {
+                modalBookContent.innerHTML = '<p class="text-gray-500">Finding a great book for you...</p>';
+                recommendationModal.classList.add('active');
+
+                fetch('/api/recommendation')
+                    .then(res => res.json())
+                    .then(book => {
+                        modalBookContent.innerHTML = `
+                            <div class="flex flex-col sm:flex-row gap-6">
+                                <img src="${book.image}" alt="${book.title}" class="rounded-md h-64 object-cover w-full sm:w-1/3">
+                                <div>
+                                    <h3 class="text-xl font-bold mb-2">${book.title}</h3>
+                                    <p class="text-gray-600 mb-2">by ${book.author}</p>
+                                    <p class="text-gray-700 mb-4">${book.description}</p>
+                                    <button data-book-id="${book.id}" class="add-to-cart-from-modal-btn mt-4 w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700">Add to Cart</button>
+                                </div>
+                            </div>`;
+                    })
+                    .catch(err => {
+                        modalBookContent.innerHTML = '<p class="text-red-500">Could not get a recommendation right now.</p>';
                     });
+            };
+            
+            modalBookContent.addEventListener('click', e => {
+                if(e.target.classList.contains('add-to-cart-from-modal-btn')) {
+                    const bookId = parseInt(e.target.dataset.bookId);
+                    addToCart(bookId);
+                    recommendationModal.classList.remove('active');
+                    alert('Book added to your cart!');
+                }
+            });
+
+            closeModalBtn.addEventListener('click', () => recommendationModal.classList.remove('active'));
+
+            // --- INITIALIZATION ---
+            fetch('/api/books')
+                .then(response => response.json())
+                .then(data => {
+                    books = data;
+                    renderBooks();
                 })
                 .catch(error => {
                     console.error('Error fetching books:', error);
-                    if (loadingMessage) {
-                        loadingMessage.remove();
-                    }
-                    bookListEl.innerHTML = '<p class="text-red-500 col-span-full text-center">Could not load books. Please ensure the backend service is running correctly.</p>';
+                    bookListEl.innerHTML = '<p class="text-red-500 col-span-full text-center">Could not load books.</p>';
                 });
         });
     </script>
