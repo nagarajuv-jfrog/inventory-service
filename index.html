@@ -36,8 +36,8 @@
             const bookListEl = document.getElementById('book-list');
             const loadingMessage = document.getElementById('loading-message');
 
-            // Fetch books from the backend API using its Kubernetes service name.
-            fetch('http://inventory-backend-svc:5000/api/books')
+            // Fetch books from a relative API path. Nginx will proxy this to the backend.
+            fetch('/api/books')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
