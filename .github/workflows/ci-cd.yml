@@ -101,14 +101,17 @@ jobs:
 
       - name: Create and Attach Commit Review Evidence (Pre-DEV Gate)
         run: |
-          echo '{
+          timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          cat <<EOF > commit-review.json
+          {
             "attributes": [
               { "name": "committer", "value": "${{ github.actor }}" },
               { "name": "reviewer", "value": "code-owner@bookverse.com" },
               { "name": "review_status", "value": "Approved" },
-              { "name": "review_date", "value": "'$(TZ=UTC date --iso-8601=seconds)'" }
+              { "name": "review_date", "value": "$timestamp" }
             ]
-          }' > commit-review.json
+          }
+          EOF
           jfrog evd create --predicate commit-review.json --predicate-type "https://in-toto.io/attestation/scai/attribute-report" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }}
 
       - name: Promote to DEV
@@ -117,10 +120,12 @@ jobs:
 
       - name: Create and Attach DEV Smoke Test Evidence (QA Gate)
         run: |
-          echo '{
+          timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          cat <<EOF > dev-smoke-test.json
+          {
             "summary": {
               "result": "PASSED",
-              "timestamp": "${{ 'TZ=UTC' date --iso-8601=seconds }}",
+              "timestamp": "$timestamp",
               "test_suite": "Smoke Tests (ran in DEV)",
               "total_tests": 3,
               "passed": 3,
@@ -132,7 +137,8 @@ jobs:
               { "name": "Database Connection", "status": "PASSED", "duration_ms": 75 },
               { "name": "Frontend Load Test", "status": "PASSED", "duration_ms": 12115 }
             ]
-          }' > dev-smoke-test.json
+          }
+          EOF
           jfrog evd create --predicate dev-smoke-test.json --predicate-type "https://in-toto.io/attestation/test-result/v0.1" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }}
 
       - name: Promote to QA
@@ -174,13 +180,16 @@ jobs:
 
       - name: Create and Attach STAGE Sign-off & Trace Evidence (PROD Gate)
         run: |
-          echo '{
+          timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          cat <<EOF > stage-signoff.json
+          {
             "attributes": [
               { "name": "quality_gate_passed", "value": true },
               { "name": "approved_by", "value": "product-manager@bookverse.com" },
-              { "name": "approval_date", "value": "'$(TZ=UTC date --iso-8601=seconds)'" }
+              { "name": "approval_date", "value": "$timestamp" }
             ]
-          }' > stage-signoff.json
+          }
+          EOF
           echo '{
             "trace_id": "trace-xyz-9876",
             "environment": "STAGE",
