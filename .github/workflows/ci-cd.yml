@@ -73,8 +73,11 @@ jobs:
           jfrog rbc ${{ github.event.repository.name }} ${{ steps.set_version.outputs.VERSION }} --project=bookverse --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
       - name: Create and Attach Build Link Evidence
-        if: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
+          if [[ -z "${{ secrets.GPG_PRIVATE_KEY }}" ]]; then
+            echo "Skipping evidence creation: GPG_PRIVATE_KEY secret not set."
+            exit 0
+          fi
           echo "${{ secrets.GPG_PRIVATE_KEY }}" > private.key
           echo '{
             "statement": {
