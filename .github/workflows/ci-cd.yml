@@ -74,10 +74,6 @@ jobs:
 
       - name: Create and Attach Build Link Evidence
         run: |
-          if [[ -z "${{ secrets.GPG_PRIVATE_KEY }}" ]]; then
-            echo "Skipping evidence creation: GPG_PRIVATE_KEY secret not set."
-            exit 0
-          fi
           echo "${{ secrets.GPG_PRIVATE_KEY }}" > private.key
           echo '{
             "statement": {
@@ -117,7 +113,7 @@ jobs:
             ]
           }
           EOF
-          jfrog evd create --predicate commit-review.json --predicate-type "https://in-toto.io/attestation/scai/attribute-report" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} --key=${{ vars.GPG_KEY_NAME }}
+          jfrog evd create --predicate commit-review.json --predicate-type "https://in-toto.io/attestation/scai/attribute-report" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} --key="${{ secrets.GPG_PRIVATE_KEY }}"
 
       - name: Promote to DEV
         run: |
