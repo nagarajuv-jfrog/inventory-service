@@ -3,40 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BookVerse - Inventory</title>
+    <title>BookVerse - Your Universe of Books</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
         .book-card {
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            border: 1px solid #e5e7eb;
         }
         .book-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .book-cover {
+            height: 24rem; /* 384px */
+            object-fit: cover;
         }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50 text-gray-800">
 
-    <div class="container mx-auto px-6 py-8">
-        <div class="flex justify-between items-center mb-6">
-             <h1 class="text-3xl font-bold text-gray-800">Book Inventory</h1>
-             <p class="text-sm font-medium text-gray-500">Inventory Service</p>
+    <!-- Header -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 005.5 16c1.255 0 2.443-.29 3.5-.804V4.804zM14.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 0014.5 16c1.255 0 2.443-.29 3.5-.804v-10A7.968 7.968 0 0014.5 4z" />
+                </svg>
+                <h1 class="text-2xl font-bold text-gray-800">BookVerse</h1>
+            </div>
+            <div class="text-sm font-medium text-gray-500">
+                Inventory Service
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-12">
+        <div class="text-center mb-12">
+            <h2 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">Welcome to Our Bookstore</h2>
+            <p class="mt-4 text-lg leading-8 text-gray-600">Find your next great read from our curated collection.</p>
         </div>
-       
-        <div id="book-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+
+        <!-- Book List -->
+        <div id="book-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
             <!-- Loading state -->
-            <p id="loading-message" class="text-gray-500">Loading books...</p>
+            <p id="loading-message" class="text-gray-500 col-span-full text-center">Loading books...</p>
         </div>
-    </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white mt-16">
+        <div class="container mx-auto px-6 py-8 text-center text-gray-500">
+            <p>&copy; 2025 BookVerse. All rights reserved.</p>
+            <p class="text-sm">A Fictional Bookstore for a Demo Application</p>
+        </div>
+    </footer>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const bookListEl = document.getElementById('book-list');
             const loadingMessage = document.getElementById('loading-message');
 
-            // Fetch books from a relative API path. Nginx will proxy this to the backend.
             fetch('/api/books')
                 .then(response => {
                     if (!response.ok) {
@@ -45,20 +74,24 @@
                     return response.json();
                 })
                 .then(books => {
-                    loadingMessage.remove(); // Remove loading message
+                    if (loadingMessage) {
+                        loadingMessage.remove();
+                    }
                     books.forEach(book => {
                         const bookCard = document.createElement('div');
-                        bookCard.className = 'book-card bg-white p-6 rounded-lg shadow-md flex flex-col';
+                        bookCard.className = 'book-card bg-white rounded-lg shadow-md flex flex-col overflow-hidden';
                         bookCard.innerHTML = `
-                            <img src="${book.image}" alt="${book.title}" class="rounded-md mb-4 h-64 object-cover w-full">
-                            <h3 class="text-xl font-bold mb-2">${book.title}</h3>
-                            <p class="text-gray-600 mb-2">by ${book.author}</p>
-                            <p class="text-gray-700 mb-4 flex-grow">${book.description}</p>
-                            <div class="flex justify-between items-center mt-auto">
-                                <p class="text-lg font-semibold text-indigo-600">$${book.price.toFixed(2)}</p>
-                                <p class="text-sm font-medium ${book.stock > 0 ? 'text-green-600' : 'text-red-600'}">
-                                    ${book.stock > 0 ? `${book.stock} in stock` : 'Out of stock'}
-                                </p>
+                            <img src="${book.image}" alt="Cover of ${book.title}" class="book-cover w-full">
+                            <div class="p-6 flex flex-col flex-grow">
+                                <h3 class="text-lg font-bold mb-2 text-gray-900">${book.title}</h3>
+                                <p class="text-sm text-gray-600 mb-3">by ${book.author}</p>
+                                <p class="text-gray-700 text-sm mb-4 flex-grow">${book.description}</p>
+                                <div class="flex justify-between items-center mt-auto pt-4 border-t border-gray-200">
+                                    <p class="text-xl font-bold text-indigo-600">$${book.price.toFixed(2)}</p>
+                                    <p class="text-xs font-medium px-2 py-1 rounded-full ${book.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                        ${book.stock > 0 ? `${book.stock} in stock` : 'Out of stock'}
+                                    </p>
+                                </div>
                             </div>
                         `;
                         bookListEl.appendChild(bookCard);
@@ -66,7 +99,10 @@
                 })
                 .catch(error => {
                     console.error('Error fetching books:', error);
-                    bookListEl.innerHTML = '<p class="text-red-500 col-span-full">Could not load books. Is the backend service running?</p>';
+                    if (loadingMessage) {
+                        loadingMessage.remove();
+                    }
+                    bookListEl.innerHTML = '<p class="text-red-500 col-span-full text-center">Could not load books. Please ensure the backend service is running correctly.</p>';
                 });
         });
     </script>
