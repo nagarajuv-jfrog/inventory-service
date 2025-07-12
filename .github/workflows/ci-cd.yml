@@ -85,7 +85,7 @@ jobs:
               }
             }
           }' > build-link-evidence.json
-          jfrog evd create --predicate build-link-evidence.json --predicate-type "https://in-toto.io/attestation/link/v0.3" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }}
+          jfrog evd create --predicate build-link-evidence.json --predicate-type "https://in-toto.io/attestation/link/v0.3" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }} --key=${{ vars.GPG_KEY_NAME }}
 
   promote-bundle:
     needs: build-and-publish
@@ -112,7 +112,7 @@ jobs:
             ]
           }
           EOF
-          jfrog evd create --predicate commit-review.json --predicate-type "https://in-toto.io/attestation/scai/attribute-report" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }}
+          jfrog evd create --predicate commit-review.json --predicate-type "https://in-toto.io/attestation/scai/attribute-report" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} --key=${{ vars.GPG_KEY_NAME }}
 
       - name: Promote to DEV
         run: |
@@ -139,7 +139,7 @@ jobs:
             ]
           }
           EOF
-          jfrog evd create --predicate dev-smoke-test.json --predicate-type "https://in-toto.io/attestation/test-result/v0.1" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }}
+          jfrog evd create --predicate dev-smoke-test.json --predicate-type "https://in-toto.io/attestation/test-result/v0.1" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} --key=${{ vars.GPG_KEY_NAME }}
 
       - name: Promote to QA
         run: |
@@ -171,8 +171,8 @@ jobs:
               }
             ]
           }' > qa-jira-issues.json
-          jfrog evd create --predicate qa-test-results.json --predicate-type "https://in-toto.io/attestation/test-result/v0.1" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }}
-          jfrog evd create --predicate qa-jira-issues.json --predicate-type "https://in-toto.io/attestation/scai/attribute-report" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }}
+          jfrog evd create --predicate qa-test-results.json --predicate-type "https://in-toto.io/attestation/test-result/v0.1" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} --key=${{ vars.GPG_KEY_NAME }}
+          jfrog evd create --predicate qa-jira-issues.json --predicate-type "https://in-toto.io/attestation/scai/attribute-report" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} --key=${{ vars.GPG_KEY_NAME }}
 
       - name: Promote to STAGE
         run: |
@@ -197,8 +197,8 @@ jobs:
             "duration": "7200s",
             "details": "Application ran successfully under load test in staging environment."
           }' > stage-runtime-trace.json
-          jfrog evd create --predicate stage-signoff.json --predicate-type "https://in-toto.io/attestation/scai/attribute-report" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }}
-          jfrog evd create --predicate stage-runtime-trace.json --predicate-type "https://in-toto.io/attestation/runtime-trace/v0.1" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }}
+          jfrog evd create --predicate stage-signoff.json --predicate-type "https://in-toto.io/attestation/scai/attribute-report" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} --key=${{ vars.GPG_KEY_NAME }}
+          jfrog evd create --predicate stage-runtime-trace.json --predicate-type "https://in-toto.io/attestation/runtime-trace/v0.1" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} --key=${{ vars.GPG_KEY_NAME }}
 
       - name: Promote to PROD
         run: |
