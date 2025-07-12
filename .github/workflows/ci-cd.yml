@@ -84,13 +84,17 @@ jobs:
           JF_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
           JF_PROJECT: "bookverse"
 
-      - name: Promote to QA
+      - name: Promote to DEV
         run: |
-          jfrog rbp ${{ github.event.repository.name }} ${{ needs.build-and-publish.outputs.version }} QA --promotion-type=move --include-repos=bookverse-docker-internal
+          jfrog rbp ${{ github.event.repository.name }} ${{ needs.build-and-publish.outputs.version }} DEV --promotion-type=move --include-repos=bookverse-docker-internal
 
-      - name: Promote to STAGE
-        run: |
-          jfrog rbp ${{ github.event.repository.name }} ${{ needs.build-and-publish.outputs.version }} STAGE --promotion-type=move --include-repos=bookverse-docker-internal
+      #- name: Promote to QA
+      #  run: |
+      #    jfrog rbp ${{ github.event.repository.name }} ${{ needs.build-and-publish.outputs.version }} QA --promotion-type=move --include-repos=bookverse-docker-internal
+
+      #- name: Promote to STAGE
+      #  run: |
+      #    jfrog rbp ${{ github.event.repository.name }} ${{ needs.build-and-publish.outputs.version }} STAGE --promotion-type=move --include-repos=bookverse-docker-internal
 
       - name: Promote to PROD
         run: |
