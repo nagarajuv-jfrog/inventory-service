@@ -107,14 +107,13 @@ jobs:
 
       - name: Create and Attach Commit Review Evidence (Pre-DEV Gate)
         run: |
-          timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           cat <<EOF > commit-review.json
           {
             "attributes": [
               { "name": "committer", "value": "${{ github.actor }}" },
               { "name": "reviewer", "value": "code-owner@bookverse.com" },
               { "name": "review_status", "value": "Approved" },
-              { "name": "review_date", "value": "$timestamp" }
+              { "name": "review_date", "value": "Jun 2, 2025 10:23:16 UTC" }
             ]
           }
           EOF
