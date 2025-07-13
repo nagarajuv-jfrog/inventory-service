@@ -119,7 +119,7 @@ jobs:
           }
           EOF
 
-          jf evd create --predicate ommit-review.json \
+          jf evd create --predicate commit-review.json \
           --predicate-type https://in-toto.io/attestation/scai/attribute-report \
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }} \
           --project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
