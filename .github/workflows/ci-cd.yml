@@ -74,14 +74,7 @@ jobs:
 
       - name: Create and Attach Build Link Evidence
         run: |
-          cat <<EOF > build-link-evidence.json
-          {
-            "builder": { "id": "uri:github-actions" },
-            "runId": { "workflow_run_id": "${{ github.run_id }}" }
-          }
-          EOF
-
-          jfrog evd create --predicate "{\"builder\": { \"id\": \"uri:github-actions\" },\"runId\": { \"workflow_run_id\": \"${{ github.run_id }}\"}}" --predicate-type https://in-toto.io/attestation/link/v0.3 --release-bundle inventory-service --release-bundle-version 1.3.79 --key ${{ secrets.RSA_PRIVATE }} --key-alias bookverse_rsa
+          jfrog evd create --predicate "build-link-evidence.json" --predicate-type https://in-toto.io/attestation/link/v0.3 --release-bundle inventory-service --release-bundle-version 1.3.79 --key ${{ secrets.RSA_PRIVATE }} --key-alias bookverse_rsa
 
   promote-bundle:
     needs: build-and-publish
