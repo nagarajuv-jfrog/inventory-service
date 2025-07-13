@@ -86,7 +86,7 @@ jobs:
           MC4CAQAwBQYDK2VwBCIEIH6OAuO4CKuX98e18zbPgoYhPAl1b1mb3sQnYiMNl+3E
           -----END PRIVATE KEY-----
           EOF
-          jfrog evd create --predicate build-link-evidence.json --predicate-type https://in-toto.io/attestation/link/v0.3 --release-bundle inventory-service --release-bundle-version 1.3.79 --key-alias bookverse_rsa --key ${{ secrets.BOOKVERSE_KEY }} 
+          jfrog evd create --predicate build-link-evidence.json --predicate-type https://in-toto.io/attestation/link/v0.3 --release-bundle inventory-service --release-bundle-version 1.3.79 --key-alias bookverse_rsa --key private_rsa.pem 
 
   promote-bundle:
     needs: build-and-publish
