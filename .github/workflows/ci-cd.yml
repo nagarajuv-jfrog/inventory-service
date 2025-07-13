@@ -100,13 +100,21 @@ jobs:
 
       - name: Create and Attach Commit Review Evidence (Pre-DEV Gate)
         run: |
+          # Randomly select committer and reviewer
+          committers=("dev-a@bookverse.com" "dev-b@bookverse.com" "dev-c@bookverse.com")
+          reviewers=("qa-a@bookverse.com" "qa-b@bookverse.com" "lead@bookverse.com")
+          statuses=("Approved" "Approved" "Approved" "Requires Changes")
+          
+          committer=${committers[$RANDOM % ${#committers[@]}]}
+          reviewer=${reviewers[$RANDOM % ${#reviewers[@]}]}
+          status=${statuses[$RANDOM % ${#statuses[@]}]}
+
           cat <<EOF > commit-review.json
           {
             "attributes": [
-              { "name": "committer", "value": "${{ github.actor }}" },
-              { "name": "reviewer", "value": "code-owner@bookverse.com" },
-              { "name": "review_status", "value": "Approved" },
-              { "name": "review_date", "value": "Jun 2, 2025 10:23:16 UTC" }
+              { "name": "committer", "value": "$committer" },
+              { "name": "reviewer", "value": "$reviewer" },
+              { "name": "review_status", "value": "$status" }
             ]
           }
           EOF
@@ -122,22 +130,29 @@ jobs:
 
       - name: Create and Attach DEV Smoke Test Evidence (QA Gate)
         run: |
-          timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          # Generate random test results
+          passed_tests=$((RANDOM % 3 + 1))
+          failed_tests=$((3 - passed_tests))
+          duration=$(echo "scale=2; $RANDOM/1000" | bc)
+          api_duration=$((RANDOM % 200 + 50))
+          db_duration=$((RANDOM % 100 + 20))
+          frontend_duration=$((RANDOM % 15000 + 5000))
+          test_result=$(if [ $failed_tests -eq 0 ]; then echo "PASSED"; else echo "FAILED"; fi)
+
           cat <<EOF > dev-smoke-test.json
           {
             "summary": {
-              "result": "PASSED",
-              "timestamp": "$timestamp",
+              "result": "$test_result",
               "test_suite": "Smoke Tests (ran in DEV)",
               "total_tests": 3,
-              "passed": 3,
-              "failed": 0,
-              "duration_seconds": 12.34
+              "passed": $passed_tests,
+              "failed": $failed_tests,
+              "duration_seconds": $duration
             },
             "tests": [
-              { "name": "API Endpoint Connectivity", "status": "PASSED", "duration_ms": 150 },
-              { "name": "Database Connection", "status": "PASSED", "duration_ms": 75 },
-              { "name": "Frontend Load Test", "status": "PASSED", "duration_ms": 12115 }
+              { "name": "API Endpoint Connectivity", "status": "PASSED", "duration_ms": $api_duration },
+              { "name": "Database Connection", "status": "PASSED", "duration_ms": $db_duration },
+              { "name": "Frontend Load Test", "status": "$test_result", "duration_ms": $frontend_duration }
             ]
           }
           EOF
@@ -153,17 +168,25 @@ jobs:
 
       - name: Create and Attach QA Test & Jira Evidence (STAGE Gate)
         run: |
-          cat <<EOF > dqa-test-results.json
+        run: |
+          # Generate random QA test results
+          passed_qa=$((RANDOM % 100 + 250))
+          failed_qa=$((RANDOM % 5))
+          skipped_qa=$((RANDOM % 5))
+          duration_qa=$((RANDOM % 60 + 90))
+          qa_result=$(if [ $failed_qa -eq 0 ]; then echo "PASSED"; else echo "FAILED"; fi)
+
+          cat <<EOF > qa-test-results.json
           {
-            "result": "PASSED",
-            "duration": "125s",
-            "passed": 345,
-            "failed": 0,
-            "skipped": 2,
+            "result": "$qa_result",
+            "duration": "${duration_qa}s",
+            "passed": $passed_qa,
+            "failed": $failed_qa,
+            "skipped": $skipped_qa,
             "test_suite": "QA Regression Suite (ran in QA)"
           }
           EOF
-
+          
           cat <<EOF > qa-jira-issues.json
           {
             "attributes": [
@@ -181,7 +204,7 @@ jobs:
               }
             ]
           }
-          EOF          
+          EOF      
 
           jf evd create --predicate qa-test-results.json \
           --predicate-type https://in-toto.io/attestation/test-result/v0.1 \
@@ -199,20 +222,23 @@ jobs:
 
       - name: Create and Attach STAGE Sign-off & Trace Evidence (PROD Gate)
         run: |
-          timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          # Randomly select an approver
+          approvers=("product-manager-a@bookverse.com" "product-manager-b@bookverse.com" "cto@bookverse.com")
+          approver=${approvers[$RANDOM % ${#approvers[@]}]}
+          trace_id="trace-$(openssl rand -hex 8)"
+
           cat <<EOF > stage-signoff.json
           {
             "attributes": [
               { "name": "quality_gate_passed", "value": true },
-              { "name": "approved_by", "value": "product-manager@bookverse.com" },
-              { "name": "approval_date", "value": "$timestamp" }
+              { "name": "approved_by", "value": "$approver" }
             ]
           }
           EOF
 
           cat <<EOF > stage-runtime-trace.json
           {
-            "trace_id": "trace-xyz-9876",
+            "trace_id": "$trace_id",
             "environment": "STAGE",
             "status": "SUCCESS",
             "duration": "7200s",
