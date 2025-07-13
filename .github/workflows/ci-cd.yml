@@ -246,7 +246,7 @@ jobs:
           EOF
 
           jf evd create --predicate stage-signoff.json \
-          --predicate-type "Attribute Report"
+          --predicate-type "Attribute Report" \
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
 
