@@ -81,7 +81,7 @@ jobs:
 
       - name: Create and Attach Build Link Evidence
         run: |
-          cat <<EOF > private_rsa.pem
+          cat <<EOF > build-link-evidence.json
           {
             "builder": { "id": "uri:github-actions" },
             "runId": { "workflow_run_id": "${{ github.run_id }}" }
