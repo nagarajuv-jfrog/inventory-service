@@ -82,7 +82,9 @@ jobs:
             }
           }
           EOF
-          jfrog evd create --predicate "build-link-evidence.json" --predicate-type "https://in-toto.io/attestation/link/v0.3" --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }} --key ${{ secrets.BOOKVERSE_KEY }}
+          jfrog evd create --predicate build-link-evidence.json --predicate-type https://in-toto.io/attestation/link/v0.3 \
+           --release-bundle ${{ github.event.repository.name }} --release-bundle-version\
+           ${{ steps.set_version.outputs.VERSION }} --key ${{ secrets.BOOKVERSE_KEY }}
 
 #          SUBJECT_PATH="bookverse-docker-internal/${{ github.event.repository.name }}-backend/${{ steps.set_version.outputs.VERSION }}/"
 #          curl -H "Authorization: Bearer ${{ secrets.JFROG_ACCESS_TOKEN }}" \
