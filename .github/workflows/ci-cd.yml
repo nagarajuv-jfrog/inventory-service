@@ -72,13 +72,6 @@ jobs:
         run: |
           jfrog rbc ${{ github.event.repository.name }} ${{ steps.set_version.outputs.VERSION }} --project=bookverse --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
-          cat <<EOF > build-link-evidence.json
-          {
-            "builder": { "id": "uri:github-actions" },
-            "runId": { "workflow_run_id": "${{ github.run_id }}" }
-          }
-          EOF
-
       - name: Create and Attach Build Link Evidence
         run: |
           cat <<EOF > build-link-evidence.json
@@ -107,35 +100,21 @@ jobs:
 
       - name: Create and Attach Commit Review Evidence (Pre-DEV Gate)
         run: |
-          cat <<EOF > build-link-evidence.json
+          cat <<EOF > commit-review.json
           {
-            "builder": { "id": "uri:github-actions" },
-            "runId": { "workflow_run_id": "${{ github.run_id }}" }
+            "attributes": [
+              { "name": "committer", "value": "${{ github.actor }}" },
+              { "name": "reviewer", "value": "code-owner@bookverse.com" },
+              { "name": "review_status", "value": "Approved" },
+              { "name": "review_date", "value": "Jun 2, 2025 10:23:16 UTC" }
+            ]
           }
           EOF
 
-          jf evd create --predicate build-link-evidence.json \
-          --predicate-type https://in-toto.io/attestation/link/v0.3 \
-          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }} \
+          jf evd create --predicate commit-review.json \
+          --predicate-type https://in-toto.io/attestation/scai/attribute-report \
+          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
-  
-  
-  
-          #cat <<EOF > commit-review.json
-          #{
-          #  "attributes": [
-          #    { "name": "committer", "value": "${{ github.actor }}" },
-          #    { "name": "reviewer", "value": "code-owner@bookverse.com" },
-          #    { "name": "review_status", "value": "Approved" },
-          #    { "name": "review_date", "value": "Jun 2, 2025 10:23:16 UTC" }
-          #  ]
-          #}
-          #EOF
-
-          #jf evd create --predicate commit-review.json \
-          #--predicate-type https://in-toto.io/attestation/scai/attribute-report \
-          #--release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }} \
-          #--project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
 
       - name: Promote to DEV
         run: |
@@ -165,7 +144,7 @@ jobs:
 
           jf evd create --predicate dev-smoke-test.json \
           --predicate-type https://in-toto.io/attestation/test-result/v0.1 \
-          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }} \
+          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
         
       - name: Promote to QA
@@ -200,12 +179,12 @@ jobs:
           }' > qa-jira-issues.json
           jf evd create --predicate qa-test-results.json \
           --predicate-type https://in-toto.io/attestation/test-result/v0.1 \
-          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }} \
+          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
 
           jf evd create --predicate qa-jira-issues.json \
           --predicate-type hhttps://in-toto.io/attestation/scai/attribute-report \
-          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }} \
+          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
 
       - name: Promote to STAGE
@@ -234,12 +213,12 @@ jobs:
 
           jf evd create --predicate tage-signoff.json \
           --predicate-type https://in-toto.io/attestation/scai/attribute-report \
-          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }} \
+          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
 
           jf evd create --predicate tage-runtime-trace.json \
           --predicate-type https://in-toto.io/attestation/runtime-trace/v0.1 \
-          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }} \
+          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
 
       - name: Promote to PROD
