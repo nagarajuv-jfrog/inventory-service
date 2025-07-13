@@ -82,7 +82,7 @@ jobs:
           EOF
 
           jf evd create --predicate build-link-evidence.json \
-          --predicate-type https://in-toto.io/attestation/link/v0.3 \
+          --predicate-type "Build Link" \
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }} \
           --project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
  
@@ -120,7 +120,7 @@ jobs:
           EOF
 
           jf evd create --predicate commit-review.json \
-          --predicate-type https://in-toto.io/attestation/scai/attribute-report \
+          --predicate-type "Attribute Report" \
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
 
@@ -158,7 +158,7 @@ jobs:
           EOF
 
           jf evd create --predicate dev-smoke-test.json \
-          --predicate-type https://in-toto.io/attestation/test-result/v0.1 \
+          --predicate-type "Test Result" \
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
         
@@ -206,12 +206,12 @@ jobs:
           EOF      
 
           jf evd create --predicate qa-test-results.json \
-          --predicate-type https://in-toto.io/attestation/test-result/v0.1 \
+          --predicate-type "Test Results" \
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
 
           jf evd create --predicate qa-jira-issues.json \
-          --predicate-type hhttps://in-toto.io/attestation/scai/attribute-report \
+          --predicate-type "Attribute Report" \
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
 
@@ -246,12 +246,12 @@ jobs:
           EOF
 
           jf evd create --predicate stage-signoff.json \
-          --predicate-type https://in-toto.io/attestation/scai/attribute-report \
+          --predicate-type "Attribute Report"
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
 
           jf evd create --predicate stage-runtime-trace.json \
-          --predicate-type https://in-toto.io/attestation/runtime-trace/v0.1 \
+          --predicate-type "Runtime Trace \
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
 
