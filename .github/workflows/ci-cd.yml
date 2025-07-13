@@ -107,14 +107,13 @@ jobs:
 
       - name: Create and Attach Commit Review Evidence (Pre-DEV Gate)
         run: |
-          #timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           cat <<EOF > commit-review.json
           {
             "attributes": [
               { "name": "committer", "value": "${{ github.actor }}" },
               { "name": "reviewer", "value": "code-owner@bookverse.com" },
               { "name": "review_status", "value": "Approved" },
-              { "name": "review_date", "value": "monday" }
+              { "name": "review_date", "value": "Jan 2, 2025 12:04:31" }
             ]
           }
           EOF
@@ -131,12 +130,10 @@ jobs:
 
       - name: Create and Attach DEV Smoke Test Evidence (QA Gate)
         run: |
-          timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           cat <<EOF > dev-smoke-test.json
           {
             "summary": {
               "result": "PASSED",
-              "timestamp": "$timestamp",
               "test_suite": "Smoke Tests (ran in DEV)",
               "total_tests": 3,
               "passed": 3,
