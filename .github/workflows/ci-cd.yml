@@ -107,17 +107,18 @@ jobs:
 
       - name: Create and Attach Commit Review Evidence (Pre-DEV Gate)
         run: |
-          timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          #timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           cat <<EOF > commit-review.json
           {
             "attributes": [
               { "name": "committer", "value": "${{ github.actor }}" },
               { "name": "reviewer", "value": "code-owner@bookverse.com" },
               { "name": "review_status", "value": "Approved" },
-              { "name": "review_date", "value": "$timestamp" }
+              { "name": "review_date", "value": "monday" }
             ]
           }
           EOF
+          cat <<EOF > build-link-evidence.json
 
           jf evd create --predicate commit-review.json \
           --predicate-type https://in-toto.io/attestation/scai/attribute-report \
