@@ -253,7 +253,7 @@ jobs:
           jf evd create --predicate stage-runtime-trace.json \
           --predicate-type "Runtime Trace" \
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
-          --project bookverse --key "${{ secrets.BOOKVERSE_KEY }}"
+          --project bookverse --key-alias "bookverse_key" --key "${{ secrets.BOOKVERSE_KEY }}"
 
       - name: Promote to PROD
         run: |
