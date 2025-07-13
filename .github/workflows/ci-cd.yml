@@ -118,7 +118,7 @@ jobs:
             ]
           }
           EOF
-          cat <<EOF > build-link-evidence.json
+          cat <<EOF > 
 
           jf evd create --predicate commit-review.json \
           --predicate-type https://in-toto.io/attestation/scai/attribute-report \
