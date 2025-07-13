@@ -83,7 +83,32 @@ jobs:
         run: |
           cat <<EOF > private_rsa.pem
           -----BEGIN PRIVATE KEY-----
-          MC4CAQAwBQYDK2VwBCIEIH6OAuO4CKuX98e18zbPgoYhPAl1b1mb3sQnYiMNl+3E
+          MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCbTIE7ygQbxWgg
+          dyPbPx2GTq2Lkg2spM6PevI0V/hVcwMZ714W9eqjg/nbdTthYj0yo1D4B6Y6j2tT
+          H4z/5UjflBOVO0y5gB+xJzro99J4p0jFYTRY0MKVS2HeBRVJv0ghGUXpE30Sa/kB
+          7kAme00LqdQtT2RbmZDzHAK0RovjyaUfwYpuAlcH/dD65BQXcQcDl5tVwluEEr2B
+          757ZfngHbQM1N7QHfqo6edY4GT7tfai+091rlNNTMYI+nvleXkmd+hPOvTSomOat
+          lh8UWjnVM8zYenBhm+/OxAc90mZXszQitgIjGJZfM1OVI2tuRyeXmi5Wb7h3s6Yi
+          Q61XeBTzAgMBAAECggEAA0Pui7VJtNPHxrb6mAeRtVs+JushQnoMpdOt+A/JdvJ+
+          JDN2RQFSt7F0tXqXjwqjwsbQUwbGJgER/qNxMYg+qgTRDJg8msHo6K6sfG2JjWPn
+          Ec9jbGKnVMBLBIIS2oQdHiUL5US1ooeGqtW5n5WEHzSo83Lx50MpWxNBs0ywcE+q
+          siNZ4JTyswnDP6MiA8+E7qqdUJ6Cb94EUf5vZgrivOKHNbJIfHdWiwMNMNl9zv8u
+          +ydB75FhAEumONcAVFb37lR91knzFQ1bqrFC0rcbUeJ8T2sTz5qIdogmTxi0xPfZ
+          MKZjQsuLPFr+9U8HvMlN68GqwbG+YR7z3jVbQL23kQKBgQDXel6lDXnnngdWyEfD
+          QBHGeOFHhBEA/mkiDFATKhMZqmyLLefVaOv6STBxWDqWkU9sSRknUi+ncIR96dFN
+          PBvN57HY3i3A5YWpQOogt0hYVoUXfDh+Xq7+LrQLH72DZuDXbQubIJDQ0qytd7lZ
+          hsNMigOlOWiaK8ZhcEHXhVVkLwKBgQC4gPckjbWG0wbFvAOsEWu/NPe5ZTtgBoHQ
+          9gpLUV0ayIRaQznp/5S6pw0qL/+ahZw4T2pA6BsgbYQMyT5oQxY32SEvper4l4WL
+          cPVHkFtxGgcaEbBwlaAFHqXvn+/Bj7tL5ayl9EMHVR8c9Iuv2TPXI/UvsBHhM4dH
+          c7r3/E/2fQKBgQC8sQ4cX1a3Oy2WE0C0fHCUatpsM/xn8GHETR/6CEg9m339yy9P
+          NNggjuL6/pYfsBPq8YAzbMcKS3/ae1yr081NXG3jSXyrhNKtSok8KQQTR4C49jDK
+          iMOZFvDXJO5iGT8fpwAY0kW+eB56sXMAMQDpD5rtnv44s8i/HvypbLtARQKBgQCV
+          Jwyj7Ds3RxlOeHOvglXMORGaOpAJTLldJ8mioZ/WqwrzvSzwUcD2M12dIThMvn5P
+          t0N6PSjQyjfZ7kYZG0K22zzMvCB73mIDG8ntlHGXuSbMmEg+e3blLKWQVYcIvxz2
+          ejFb517YaqPAUKEsAza5UURAzOFnYLSXuqMHHl22MQKBgAU2r/Fw+dnqQW02D0Rv
+          sg8ExdW4U7edGDWXmZSC7+sPYZvuZBLk/1mphLhlJ1qxiZ0hSyC4rJnMb3o2GqP7
+          b+n5HUrj7ehJc3x6N0uarv+v4P4TQwNukvK3MmiWu/ZFAOabTjQBZkDh+YfxlAhk
+          y1pxEmYyVwaw9jWff+NvsyxG
           -----END PRIVATE KEY-----
           EOF
           jfrog evd create --predicate build-link-evidence.json --predicate-type https://in-toto.io/attestation/link/v0.3 --release-bundle inventory-service --release-bundle-version 1.3.79 --key-alias bookverse_rsa --key private_rsa.pem 
