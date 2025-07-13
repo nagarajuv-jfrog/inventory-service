@@ -168,7 +168,6 @@ jobs:
 
       - name: Create and Attach QA Test & Jira Evidence (STAGE Gate)
         run: |
-        run: |
           # Generate random QA test results
           passed_qa=$((RANDOM % 100 + 250))
           failed_qa=$((RANDOM % 5))
