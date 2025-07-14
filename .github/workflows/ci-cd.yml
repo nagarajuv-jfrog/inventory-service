@@ -81,8 +81,15 @@ jobs:
           }
           EOF
 
+          # Create Markdown Evidence
+          cat <<EOF > build-link-evidence.md
+          # Build Link Evidence
+          This evidence links the release bundle to the CI/CD pipeline that built it.
+          - **Workflow Run:** [${{ github.server.url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}](${{ github.server.url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          EOF
+
           jf evd create --predicate build-link-evidence.json \
-          --predicate-type "Build Link" \
+          --predicate-type "Build Link" --markdown build-link-evidence.md \
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }} \
           --project bookverse --key-alias "bookverse_key" --key "${{ secrets.BOOKVERSE_KEY }}"
  
@@ -119,8 +126,19 @@ jobs:
           }
           EOF
 
+          # Create Markdown Evidence
+          cat <<EOF > commit-review.md
+          # Commit Review Evidence
+          This evidence attests that the code has passed the peer review gate.
+          | Field         | Value        |
+          |---------------|--------------|
+          | **Committer** | \`$committer\` |
+          | **Reviewer** | \`$reviewer\`  |
+          | **Status** | **$status** |
+          EOF
+
           jf evd create --predicate commit-review.json \
-          --predicate-type "Attribute Report" \
+          --predicate-type "Attribute Report" --markdown commit-review.md \
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key-alias "bookverse_key" --key "${{ secrets.BOOKVERSE_KEY }}"
 
@@ -157,8 +175,20 @@ jobs:
           }
           EOF
 
+          # Create Markdown Evidence
+          cat <<EOF > dev-smoke-test.md
+          # DEV Smoke Test Results
+          - **Result:** $test_result
+          - **Duration:** ${duration}s
+          | Test Case                   | Status | Duration (ms) |
+          |-----------------------------|--------|---------------|
+          | API Endpoint Connectivity   | PASSED | $api_duration     |
+          | Database Connection         | PASSED | $db_duration      |
+          | Frontend Load Test          | $test_result | $frontend_duration  |
+          EOF
+
           jf evd create --predicate dev-smoke-test.json \
-          --predicate-type "Test Result" \
+          --predicate-type "Test Result" --markdown dev-smoke-test.md \
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key-alias "bookverse_key" --key "${{ secrets.BOOKVERSE_KEY }}"
         
@@ -205,13 +235,42 @@ jobs:
           }
           EOF      
 
+          # Create QA Test JSON and Markdown
+          cat <<EOF > qa-test-results.json
+          { "result": "$qa_result", "duration": "${duration_qa}s", "passed": $passed_qa, "failed": $failed_qa, "skipped": $skipped_qa, "test_suite": "QA Regression Suite (ran in QA)" }
+          EOF
+          cat <<EOF > qa-test-results.md
+          # QA Regression Suite Results
+          | Metric  | Value     |
+          |---------|-----------|
+          | Result  | $qa_result  |
+          | Passed  | $passed_qa  |
+          | Failed  | $failed_qa  |
+          | Skipped | $skipped_qa |
+          | Duration| ${duration_qa}s |
+          EOF
+
+          # Create Jira Issues JSON and Markdown
+          cat <<EOF > qa-jira-issues.json
+          { "attributes": [ { "name": "jira_integration", "value": { "server_url": "https://bookverse.atlassian.net", "query": "fixVersion = ${{ needs.build-and-publish.outputs.version }} AND status in (Resolved, Closed)", "issues_found": 2, "issues": [ { "key": "BOOK-101", "summary": "UI glitch on checkout page for large orders", "status": "Closed", "priority": "High" }, { "key": "BOOK-105", "summary": "API returns 500 error when book stock is zero", "status": "Resolved", "priority": "Medium" } ] } } ] }
+          EOF
+          cat <<EOF > qa-jira-issues.md
+          # Jira Issue Tracking
+          This evidence shows all Jira tickets resolved in this version.
+          - **Jira Query:** \`fixVersion = ${{ needs.build-and-publish.outputs.version }} AND status in (Resolved, Closed)\`
+          - **Issues Found:** 2
+          ### Resolved Issues
+          1.  **BOOK-101:** UI glitch on checkout page for large orders (Status: Closed)
+          2.  **BOOK-105:** API returns 500 error when book stock is zero (Status: Resolved)
+          EOF
+
           jf evd create --predicate qa-test-results.json \
-          --predicate-type "Test Results" \
+          --predicate-type "Test Results" --markdown qa-test-results.md \
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key-alias "bookverse_key" --key "${{ secrets.BOOKVERSE_KEY }}"
 
           jf evd create --predicate qa-jira-issues.json \
-          --predicate-type "Attribute Report" \
+          --predicate-type "Attribute Report" --markdown qa-jira-issues.md \
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key-alias "bookverse_key" --key "${{ secrets.BOOKVERSE_KEY }}"
 
@@ -245,13 +304,36 @@ jobs:
           }
           EOF
 
+          # Create Stage Sign-off JSON and Markdown
+          cat <<EOF > stage-signoff.json
+          { "attributes": [ { "name": "quality_gate_passed", "value": true }, { "name": "approved_by", "value": "$approver" } ] }
+          EOF
+          cat <<EOF > stage-signoff.md
+          # STAGE Sign-off
+          | Field         | Value      |
+          |---------------|------------|
+          | **Approved By** | \`$approver\`|
+          | **Gate Status** | PASSED     |
+          EOF
+
+          # Create Runtime Trace JSON and Markdown
+          cat <<EOF > stage-runtime-trace.json
+          { "trace_id": "$trace_id", "environment": "STAGE", "status": "SUCCESS", "duration": "7200s", "details": "Application ran successfully under load test in staging environment." }
+          EOF
+          cat <<EOF > stage-runtime-trace.md
+          # STAGE Runtime Trace
+          - **Environment:** STAGE
+          - **Status:** SUCCESS
+          - **Trace ID:** \`$trace_id\`
+          EOF
+
           jf evd create --predicate stage-signoff.json \
-          --predicate-type "Attribute Report" \
+          --predicate-type "Attribute Report" --markdown stage-signoff.md \
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key-alias "bookverse_key" --key "${{ secrets.BOOKVERSE_KEY }}"
 
           jf evd create --predicate stage-runtime-trace.json \
-          --predicate-type "Runtime Trace" \
+          --predicate-type "Runtime Trace" --markdown stage-runtime-trace.md \
           --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
           --project bookverse --key-alias "bookverse_key" --key-alias "bookverse_key" --key "${{ secrets.BOOKVERSE_KEY }}"
 
