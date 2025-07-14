@@ -447,7 +447,7 @@ jobs:
           LATEST_BUNDLES_JSON=$(curl -s -H "Authorization: Bearer ${{ secrets.JFROG_ACCESS_TOKEN }}" "$JFROG_RECORDS_API_URL?project=bookverse")
           
           # Use jq to create a list of versions to process, excluding the version we just promoted.
-          PREVIOUS_LATEST_VERSIONS=$(echo "$LATEST_BUNDLES_JSON" | jq -r --arg new_ver "$NEW_VERSION" '.release_bundles[] | select(.tag == "latest" and .release_bundle_version != $new_ver) | .release_bundle_version')
+          PREVIOUS_LATEST_VERSIONS=$(echo "$LATEST_BUNDLES_JSON" | jq -r --arg new_ver "$NEW_VERSION" '.release_bundles[] | select(.bundle_tag == "latest" and .release_bundle_version != $new_ver) | .release_bundle_version')
 
           # 4. Loop through all found versions and restore their original tag
           if [[ -n "$PREVIOUS_LATEST_VERSIONS" ]]; then
