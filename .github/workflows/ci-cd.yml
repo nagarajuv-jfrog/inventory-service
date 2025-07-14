@@ -16,6 +16,8 @@ jobs:
 
       - name: Setup JFrog CLI
         uses: jfrog/setup-jfrog-cli@v4
+        with:
+          version: latest
         env:
           JF_URL: ${{ vars.JFROG_URL }}
           JF_USER: ${{ vars.JFROG_USER }}
