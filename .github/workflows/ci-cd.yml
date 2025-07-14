@@ -461,10 +461,10 @@ jobs:
 
               if [[ -n "$OLD_CADENCE_TAG" ]]; then
                 echo "Restoring original tag for version $version to '$OLD_CADENCE_TAG'..."
-                # Correctly replaces the 'latest' tag with the original cadence tag
                 jfrog rba "$RELEASE_BUNDLE_NAME" "$version" --tag="$OLD_CADENCE_TAG"
               else
-                echo "Warning: Could not find 'release.cadence' property for version $version. Cannot restore tag."
+                echo "Warning: Could not find 'release.cadence' property for version $version. Removing tag instead."
+                jfrog rba "$RELEASE_BUNDLE_NAME" "$version" --tag=""
               fi
             done
             echo "--- Cleanup complete ---"
