@@ -457,7 +457,7 @@ jobs:
               
               # Fetch the specific properties for this old version
               PROPS_JSON=$(curl -s -H "Authorization: Bearer ${{ secrets.JFROG_ACCESS_TOKEN }}" "$JFROG_RECORDS_API_URL/$version?project=bookverse")
-              OLD_CADENCE_TAG=$(echo "$PROPS_JSON" | jq -r '.properties[] | select(.key == "release.cadence") | .value')
+              OLD_CADENCE_TAG=$(echo "$PROPS_JSON" | jq -r '(.properties // [])[] | select(.key == "release.cadence") | .value')
 
               if [[ -n "$OLD_CADENCE_TAG" ]]; then
                 echo "Restoring original tag for version $version to '$OLD_CADENCE_TAG'..."
