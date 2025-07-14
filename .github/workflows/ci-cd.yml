@@ -72,12 +72,35 @@ jobs:
         run: |
           jfrog rbc ${{ github.event.repository.name }} ${{ steps.set_version.outputs.VERSION }} --project=bookverse --build-name=${{ github.event.repository.name }} --build-number=${{ github.run_number }}
 
+      - name: Set Initial Annotations on Release Bundle
+        run: |
+          # Randomly select a release cadence and feature ID
+          cadences=("hotfix" "major" "scheduled" "experimental")
+          feature_prefixes=("JIRA" "BUG" "FEAT" "TASK")
+          feature_suffixes=("Login" "UI-Fix" "API-Update" "Refactor-Core")
+          
+          RELEASE_CADENCE=${cadences[$RANDOM % ${#cadences[@]}]}
+          
+          # Generate a more random feature ID
+          PREFIX=${feature_prefixes[$RANDOM % ${#feature_prefixes[@]}]}
+          SUFFIX=${feature_suffixes[$RANDOM % ${#feature_suffixes[@]}]}
+          RANDOM_NUM=$((RANDOM % 900 + 100)) # Random 3-digit number
+          FEATURE_ID="$PREFIX-$RANDOM_NUM-$SUFFIX"
+          
+          echo "Selected Cadence: $RELEASE_CADENCE"
+          echo "Selected Feature ID: $FEATURE_ID"
+
+          jf rba ${{ github.event.repository.name }} ${{ steps.set_version.outputs.VERSION }} \
+            --tag=$RELEASE_CADENCE \
+            --properties="release.cadence=$RELEASE_CADENCE;feature.name=$FEATURE_ID;branch=${{ github.ref_name }};promoted_by=${{ github.actor }}"
+
       - name: Create and Attach Build Link Evidence
         run: |
+          # Create JSON Predicate
           cat <<EOF > build-link-evidence.json
           {
             "builder": { "id": "uri:github-actions" },
-            "runId": { "workflow_run_id": "${{ github.run_id }}" }
+            "runId": { "workflow_run_id": "${{ github.run_id }}-${{ github.run_attempt }}" }
           }
           EOF
 
@@ -88,11 +111,17 @@ jobs:
           - **Workflow Run:** [${{ github.server.url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}](${{ github.server.url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
           EOF
 
-          jf evd create --predicate build-link-evidence.json \
-          --predicate-type "Build Link" --markdown build-link-evidence.md \
-          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ steps.set_version.outputs.VERSION }} \
-          --project bookverse --key-alias "bookverse_key" --key "${{ secrets.BOOKVERSE_KEY }}"
- 
+          # Create Evidence with JFrog CLI
+          jf evd create \
+            --predicate build-link-evidence.json \
+            --markdown build-link-evidence.md \
+            --predicate-type "Build Link" \
+            --release-bundle ${{ github.event.repository.name }} \
+            --release-bundle-version ${{ steps.set_version.outputs.VERSION }} \
+            --project bookverse \
+            --key-alias "bookverse_key" \
+            --key "${{ secrets.BOOKVERSE_KEY }}"
+
   promote-bundle:
     needs: build-and-publish
     runs-on: ubuntu-latest
@@ -116,12 +145,22 @@ jobs:
           reviewer=${reviewers[$RANDOM % ${#reviewers[@]}]}
           status=${statuses[$RANDOM % ${#statuses[@]}]}
 
+          # Create JSON Predicate
           cat <<EOF > commit-review.json
           {
             "attributes": [
-              { "name": "committer", "value": "$committer" },
-              { "name": "reviewer", "value": "$reviewer" },
-              { "name": "review_status", "value": "$status" }
+              {
+                "name": "committer",
+                "value": "$committer"
+              },
+              {
+                "name": "reviewer",
+                "value": "$reviewer"
+              },
+              {
+                "name": "review_status",
+                "value": "$status"
+              }
             ]
           }
           EOF
@@ -137,10 +176,16 @@ jobs:
           | **Status** | **$status** |
           EOF
 
-          jf evd create --predicate commit-review.json \
-          --predicate-type "Attribute Report" --markdown commit-review.md \
-          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
-          --project bookverse --key-alias "bookverse_key" --key "${{ secrets.BOOKVERSE_KEY }}"
+          # Create Evidence with JFrog CLI
+          jf evd create \
+            --predicate commit-review.json \
+            --markdown commit-review.md \
+            --predicate-type "Commit Review" \
+            --release-bundle ${{ github.event.repository.name }} \
+            --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
+            --project bookverse \
+            --key-alias "bookverse_key" \
+            --key "${{ secrets.BOOKVERSE_KEY }}"
 
       - name: Promote to DEV
         run: |
@@ -157,6 +202,7 @@ jobs:
           frontend_duration=$((RANDOM % 15000 + 5000))
           test_result=$(if [ $failed_tests -eq 0 ]; then echo "PASSED"; else echo "FAILED"; fi)
 
+          # Create JSON Predicate
           cat <<EOF > dev-smoke-test.json
           {
             "summary": {
@@ -168,9 +214,21 @@ jobs:
               "duration_seconds": $duration
             },
             "tests": [
-              { "name": "API Endpoint Connectivity", "status": "PASSED", "duration_ms": $api_duration },
-              { "name": "Database Connection", "status": "PASSED", "duration_ms": $db_duration },
-              { "name": "Frontend Load Test", "status": "$test_result", "duration_ms": $frontend_duration }
+              {
+                "name": "API Endpoint Connectivity",
+                "status": "PASSED",
+                "duration_ms": $api_duration
+              },
+              {
+                "name": "Database Connection",
+                "status": "PASSED",
+                "duration_ms": $db_duration
+              },
+              {
+                "name": "Frontend Load Test",
+                "status": "$test_result",
+                "duration_ms": $frontend_duration
+              }
             ]
           }
           EOF
@@ -187,11 +245,17 @@ jobs:
           | Frontend Load Test          | $test_result | $frontend_duration  |
           EOF
 
-          jf evd create --predicate dev-smoke-test.json \
-          --predicate-type "Test Result" --markdown dev-smoke-test.md \
-          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
-          --project bookverse --key-alias "bookverse_key" --key "${{ secrets.BOOKVERSE_KEY }}"
-        
+          # Create Evidence with JFrog CLI
+          jf evd create \
+            --predicate dev-smoke-test.json \
+            --markdown dev-smoke-test.md \
+            --predicate-type "Test Result" \
+            --release-bundle ${{ github.event.repository.name }} \
+            --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
+            --project bookverse \
+            --key-alias "bookverse_key" \
+            --key "${{ secrets.BOOKVERSE_KEY }}"
+
       - name: Promote to QA
         run: |
           jfrog rbp ${{ github.event.repository.name }} ${{ needs.build-and-publish.outputs.version }} QA --promotion-type=move --include-repos=bookverse-docker-internal
@@ -205,6 +269,7 @@ jobs:
           duration_qa=$((RANDOM % 60 + 90))
           qa_result=$(if [ $failed_qa -eq 0 ]; then echo "PASSED"; else echo "FAILED"; fi)
 
+          # Create QA Test JSON and Markdown
           cat <<EOF > qa-test-results.json
           {
             "result": "$qa_result",
@@ -214,30 +279,6 @@ jobs:
             "skipped": $skipped_qa,
             "test_suite": "QA Regression Suite (ran in QA)"
           }
-          EOF
-          
-          cat <<EOF > qa-jira-issues.json
-          {
-            "attributes": [
-              {
-                "name": "jira_integration",
-                "value": {
-                  "server_url": "https://bookverse.atlassian.net",
-                  "query": "fixVersion = ${{ needs.build-and-publish.outputs.version }} AND status in (Resolved, Closed)",
-                  "issues_found": 2,
-                  "issues": [
-                    { "key": "BOOK-101", "summary": "UI glitch on checkout page for large orders", "status": "Closed", "priority": "High" },
-                    { "key": "BOOK-105", "summary": "API returns 500 error when book stock is zero", "status": "Resolved", "priority": "Medium" }
-                  ]
-                }
-              }
-            ]
-          }
-          EOF      
-
-          # Create QA Test JSON and Markdown
-          cat <<EOF > qa-test-results.json
-          { "result": "$qa_result", "duration": "${duration_qa}s", "passed": $passed_qa, "failed": $failed_qa, "skipped": $skipped_qa, "test_suite": "QA Regression Suite (ran in QA)" }
           EOF
           cat <<EOF > qa-test-results.md
           # QA Regression Suite Results
@@ -252,7 +293,32 @@ jobs:
 
           # Create Jira Issues JSON and Markdown
           cat <<EOF > qa-jira-issues.json
-          { "attributes": [ { "name": "jira_integration", "value": { "server_url": "https://bookverse.atlassian.net", "query": "fixVersion = ${{ needs.build-and-publish.outputs.version }} AND status in (Resolved, Closed)", "issues_found": 2, "issues": [ { "key": "BOOK-101", "summary": "UI glitch on checkout page for large orders", "status": "Closed", "priority": "High" }, { "key": "BOOK-105", "summary": "API returns 500 error when book stock is zero", "status": "Resolved", "priority": "Medium" } ] } } ] }
+          {
+            "attributes": [
+              {
+                "name": "jira_integration",
+                "value": {
+                  "server_url": "https://bookverse.atlassian.net",
+                  "query": "fixVersion = ${{ needs.build-and-publish.outputs.version }} AND status in (Resolved, Closed)",
+                  "issues_found": 2,
+                  "issues": [
+                    {
+                      "key": "BOOK-101",
+                      "summary": "UI glitch on checkout page for large orders",
+                      "status": "Closed",
+                      "priority": "High"
+                    },
+                    {
+                      "key": "BOOK-105",
+                      "summary": "API returns 500 error when book stock is zero",
+                      "status": "Resolved",
+                      "priority": "Medium"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
           EOF
           cat <<EOF > qa-jira-issues.md
           # Jira Issue Tracking
@@ -264,15 +330,26 @@ jobs:
           2.  **BOOK-105:** API returns 500 error when book stock is zero (Status: Resolved)
           EOF
 
-          jf evd create --predicate qa-test-results.json \
-          --predicate-type "Test Results" --markdown qa-test-results.md \
-          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
-          --project bookverse --key-alias "bookverse_key" --key "${{ secrets.BOOKVERSE_KEY }}"
-
-          jf evd create --predicate qa-jira-issues.json \
-          --predicate-type "Attribute Report" --markdown qa-jira-issues.md \
-          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
-          --project bookverse --key-alias "bookverse_key" --key "${{ secrets.BOOKVERSE_KEY }}"
+          # Create Evidences with JFrog CLI
+          jf evd create \
+            --predicate qa-test-results.json \
+            --markdown qa-test-results.md \
+            --predicate-type "Test Result" \
+            --release-bundle ${{ github.event.repository.name }} \
+            --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
+            --project bookverse \
+            --key-alias "bookverse_key" \
+            --key "${{ secrets.BOOKVERSE_KEY }}"
+            
+          jf evd create \
+            --predicate qa-jira-issues.json \
+            --markdown qa-jira-issues.md \
+            --predicate-type "Attribute Report" \
+            --release-bundle ${{ github.event.repository.name }} \
+            --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
+            --project bookverse \
+            --key-alias "bookverse_key" \
+            --key "${{ secrets.BOOKVERSE_KEY }}"
 
       - name: Promote to STAGE
         run: |
@@ -285,28 +362,20 @@ jobs:
           approver=${approvers[$RANDOM % ${#approvers[@]}]}
           trace_id="trace-$(openssl rand -hex 8)"
 
+          # Create Stage Sign-off JSON and Markdown
           cat <<EOF > stage-signoff.json
           {
             "attributes": [
-              { "name": "quality_gate_passed", "value": true },
-              { "name": "approved_by", "value": "$approver" }
+              {
+                "name": "quality_gate_passed",
+                "value": true
+              },
+              {
+                "name": "approved_by",
+                "value": "$approver"
+              }
             ]
           }
-          EOF
-
-          cat <<EOF > stage-runtime-trace.json
-          {
-            "trace_id": "$trace_id",
-            "environment": "STAGE",
-            "status": "SUCCESS",
-            "duration": "7200s",
-            "details": "Application ran successfully under load test in staging environment."
-          }
-          EOF
-
-          # Create Stage Sign-off JSON and Markdown
-          cat <<EOF > stage-signoff.json
-          { "attributes": [ { "name": "quality_gate_passed", "value": true }, { "name": "approved_by", "value": "$approver" } ] }
           EOF
           cat <<EOF > stage-signoff.md
           # STAGE Sign-off
@@ -318,7 +387,13 @@ jobs:
 
           # Create Runtime Trace JSON and Markdown
           cat <<EOF > stage-runtime-trace.json
-          { "trace_id": "$trace_id", "environment": "STAGE", "status": "SUCCESS", "duration": "7200s", "details": "Application ran successfully under load test in staging environment." }
+          {
+            "trace_id": "$trace_id",
+            "environment": "STAGE",
+            "status": "SUCCESS",
+            "duration": "7200s",
+            "details": "Application ran successfully under load test in staging environment."
+          }
           EOF
           cat <<EOF > stage-runtime-trace.md
           # STAGE Runtime Trace
@@ -327,16 +402,70 @@ jobs:
           - **Trace ID:** \`$trace_id\`
           EOF
 
-          jf evd create --predicate stage-signoff.json \
-          --predicate-type "Attribute Report" --markdown stage-signoff.md \
-          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
-          --project bookverse --key-alias "bookverse_key" --key "${{ secrets.BOOKVERSE_KEY }}"
+          # Create Evidences with JFrog CLI
+          jf evd create \
+            --predicate stage-signoff.json \
+            --markdown stage-signoff.md \
+            --predicate-type "Stage Sign-off" \
+            --release-bundle ${{ github.event.repository.name }} \
+            --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
+            --project bookverse \
+            --key-alias "bookverse_key" \
+            --key "${{ secrets.BOOKVERSE_KEY }}"
+            
+          jf evd create \
+            --predicate stage-runtime-trace.json \
+            --markdown stage-runtime-trace.md \
+            --predicate-type "Runtime Trace" \
+            --release-bundle ${{ github.event.repository.name }} \
+            --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
+            --project bookverse \
+            --key-alias "bookverse_key" \
+            --key "${{ secrets.BOOKVERSE_KEY }}"
 
-          jf evd create --predicate stage-runtime-trace.json \
-          --predicate-type "Runtime Trace" --markdown stage-runtime-trace.md \
-          --release-bundle ${{ github.event.repository.name }} --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
-          --project bookverse --key-alias "bookverse_key" --key-alias "bookverse_key" --key "${{ secrets.BOOKVERSE_KEY }}"
-
-      - name: Promote to PROD
+      - name: Promote to PROD and Update Latest Tag
         run: |
-          jfrog rbp ${{ github.event.repository.name }} ${{ needs.build-and-publish.outputs.version }} PROD --promotion-type=move --include-repos=bookverse-docker-internal-prod
+          # Define the new version being promoted
+          NEW_VERSION=${{ needs.build-and-publish.outputs.version }}
+          RELEASE_BUNDLE_NAME=${{ github.event.repository.name }}
+          JFROG_RECORDS_API_URL="${{ vars.JFROG_URL }}/lifecycle/api/v2/release_bundle/records/$RELEASE_BUNDLE_NAME"
+
+          # 1. Use the API to find ALL release bundles currently tagged 'latest'
+          echo "Searching for all bundles currently tagged 'latest'..."
+          LATEST_BUNDLES_JSON=$(curl -s -H "Authorization: Bearer ${{ secrets.JFROG_ACCESS_TOKEN }}" "$JFROG_RECORDS_API_URL?project=bookverse")
+          
+          # Use jq to create a list of versions to process, excluding the version we are currently promoting.
+          PREVIOUS_LATEST_VERSIONS=$(echo "$LATEST_BUNDLES_JSON" | jq -r --arg new_ver "$NEW_VERSION" '.release_bundles[] | select(.tag == "latest" and .release_bundle_version != $new_ver) | .release_bundle_version')
+
+          # 2. Loop through all found versions and restore their original tag
+          if [[ -n "$PREVIOUS_LATEST_VERSIONS" ]]; then
+            echo "Found previous latest versions to process: $PREVIOUS_LATEST_VERSIONS"
+            for version in $PREVIOUS_LATEST_VERSIONS; do
+              echo "--- Processing old version: $version ---"
+              
+              # Fetch the specific properties for this old version
+              PROPS_JSON=$(curl -s -H "Authorization: Bearer ${{ secrets.JFROG_ACCESS_TOKEN }}" "$JFROG_RECORDS_API_URL/$version?project=bookverse")
+              OLD_CADENCE_TAG=$(echo "$PROPS_JSON" | jq -r '.properties[] | select(.key == "release.cadence") | .value')
+
+              if [[ -n "$OLD_CADENCE_TAG" ]]; then
+                echo "Restoring original tag for version $version to '$OLD_CADENCE_TAG'..."
+                # Correctly replaces the 'latest' tag with the original cadence tag
+                jf rba "$RELEASE_BUNDLE_NAME" "$version" --tag="$OLD_CADENCE_TAG"
+              else
+                echo "Warning: Could not find 'release.cadence' property for version $version. Cannot restore tag."
+              fi
+            done
+            echo "--- Cleanup complete ---"
+          else
+            echo "No previous 'latest' versions found to clean up."
+          fi
+
+          # 3. Promote the new version to the PROD repository
+          echo "Promoting version $NEW_VERSION to PROD..."
+          jfrog rbp "$RELEASE_BUNDLE_NAME" "$NEW_VERSION" PROD --promotion-type=move --include-repos=bookverse-docker-internal-prod
+
+          # 4. Apply the 'latest' tag to the newly promoted version
+          echo "Applying 'latest' tag to version $NEW_VERSION..."
+          jf rba "$RELEASE_BUNDLE_NAME" "$NEW_VERSION" --tag=latest --properties="status=prod"
+
+          echo "Promotion successful. Version $NEW_VERSION is now the single 'latest' release."
