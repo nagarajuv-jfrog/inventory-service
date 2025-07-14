@@ -114,7 +114,7 @@ jobs:
           EOF
 
           # Create Evidence with JFrog CLI
-          jf evd create \
+          jfrog evd create \
             --predicate build-link-evidence.json \
             --markdown build-link-evidence.md \
             --predicate-type "Build Link" \
@@ -179,7 +179,7 @@ jobs:
           EOF
 
           # Create Evidence with JFrog CLI
-          jf evd create \
+          jfrog evd create \
             --predicate commit-review.json \
             --markdown commit-review.md \
             --predicate-type "Commit Review" \
@@ -248,7 +248,7 @@ jobs:
           EOF
 
           # Create Evidence with JFrog CLI
-          jf evd create \
+          jfrog evd create \
             --predicate dev-smoke-test.json \
             --markdown dev-smoke-test.md \
             --predicate-type "Test Result" \
@@ -333,7 +333,7 @@ jobs:
           EOF
 
           # Create Evidences with JFrog CLI
-          jf evd create \
+          jfrog evd create \
             --predicate qa-test-results.json \
             --markdown qa-test-results.md \
             --predicate-type "Test Result" \
@@ -343,7 +343,7 @@ jobs:
             --key-alias "bookverse_key" \
             --key "${{ secrets.BOOKVERSE_KEY }}"
             
-          jf evd create \
+          jfrog evd create \
             --predicate qa-jira-issues.json \
             --markdown qa-jira-issues.md \
             --predicate-type "Attribute Report" \
@@ -405,7 +405,7 @@ jobs:
           EOF
 
           # Create Evidences with JFrog CLI
-          jf evd create \
+          jfrog evd create \
             --predicate stage-signoff.json \
             --markdown stage-signoff.md \
             --predicate-type "Stage Sign-off" \
@@ -415,7 +415,7 @@ jobs:
             --key-alias "bookverse_key" \
             --key "${{ secrets.BOOKVERSE_KEY }}"
             
-          jf evd create \
+          jfrog evd create \
             --predicate stage-runtime-trace.json \
             --markdown stage-runtime-trace.md \
             --predicate-type "Runtime Trace" \
@@ -432,14 +432,22 @@ jobs:
           RELEASE_BUNDLE_NAME=${{ github.event.repository.name }}
           JFROG_RECORDS_API_URL="${{ vars.JFROG_URL }}/lifecycle/api/v2/release_bundle/records/$RELEASE_BUNDLE_NAME"
 
-          # 1. Use the API to find ALL release bundles currently tagged 'latest'
-          echo "Searching for all bundles currently tagged 'latest'..."
+          # 1. Promote the new version to the PROD repository
+          echo "Promoting version $NEW_VERSION to PROD..."
+          jfrog rbp "$RELEASE_BUNDLE_NAME" "$NEW_VERSION" PROD --promotion-type=move --include-repos=bookverse-docker-internal-prod
+
+          # 2. Apply the 'latest' tag to the newly promoted version
+          echo "Applying 'latest' tag to version $NEW_VERSION..."
+          jfrog rba "$RELEASE_BUNDLE_NAME" "$NEW_VERSION" --tag=latest --properties="status=prod"
+          
+          # 3. Use the API to find ALL OTHER release bundles currently tagged 'latest'
+          echo "Searching for all other bundles tagged 'latest' to clean them up..."
           LATEST_BUNDLES_JSON=$(curl -s -H "Authorization: Bearer ${{ secrets.JFROG_ACCESS_TOKEN }}" "$JFROG_RECORDS_API_URL?project=bookverse")
           
-          # Use jq to create a list of versions to process, excluding the version we are currently promoting.
+          # Use jq to create a list of versions to process, excluding the version we just promoted.
           PREVIOUS_LATEST_VERSIONS=$(echo "$LATEST_BUNDLES_JSON" | jq -r --arg new_ver "$NEW_VERSION" '.release_bundles[] | select(.tag == "latest" and .release_bundle_version != $new_ver) | .release_bundle_version')
 
-          # 2. Loop through all found versions and restore their original tag
+          # 4. Loop through all found versions and restore their original tag
           if [[ -n "$PREVIOUS_LATEST_VERSIONS" ]]; then
             echo "Found previous latest versions to process: $PREVIOUS_LATEST_VERSIONS"
             for version in $PREVIOUS_LATEST_VERSIONS; do
@@ -461,13 +469,5 @@ jobs:
           else
             echo "No previous 'latest' versions found to clean up."
           fi
-
-          # 3. Promote the new version to the PROD repository
-          echo "Promoting version $NEW_VERSION to PROD..."
-          jfrog rbp "$RELEASE_BUNDLE_NAME" "$NEW_VERSION" PROD --promotion-type=move --include-repos=bookverse-docker-internal-prod
-
-          # 4. Apply the 'latest' tag to the newly promoted version
-          echo "Applying 'latest' tag to version $NEW_VERSION..."
-          jfrog rba "$RELEASE_BUNDLE_NAME" "$NEW_VERSION" --tag=latest --properties="status=prod"
 
           echo "Promotion successful. Version $NEW_VERSION is now the single 'latest' release."
