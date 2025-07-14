@@ -90,7 +90,7 @@ jobs:
           echo "Selected Cadence: $RELEASE_CADENCE"
           echo "Selected Feature ID: $FEATURE_ID"
 
-          jf rba ${{ github.event.repository.name }} ${{ steps.set_version.outputs.VERSION }} \
+          jfrog rba ${{ github.event.repository.name }} ${{ steps.set_version.outputs.VERSION }} \
             --tag=$RELEASE_CADENCE \
             --properties="release.cadence=$RELEASE_CADENCE;feature.name=$FEATURE_ID;branch=${{ github.ref_name }};promoted_by=${{ github.actor }}"
 
@@ -450,7 +450,7 @@ jobs:
               if [[ -n "$OLD_CADENCE_TAG" ]]; then
                 echo "Restoring original tag for version $version to '$OLD_CADENCE_TAG'..."
                 # Correctly replaces the 'latest' tag with the original cadence tag
-                jf rba "$RELEASE_BUNDLE_NAME" "$version" --tag="$OLD_CADENCE_TAG"
+                jfrog rba "$RELEASE_BUNDLE_NAME" "$version" --tag="$OLD_CADENCE_TAG"
               else
                 echo "Warning: Could not find 'release.cadence' property for version $version. Cannot restore tag."
               fi
@@ -466,6 +466,6 @@ jobs:
 
           # 4. Apply the 'latest' tag to the newly promoted version
           echo "Applying 'latest' tag to version $NEW_VERSION..."
-          jf rba "$RELEASE_BUNDLE_NAME" "$NEW_VERSION" --tag=latest --properties="status=prod"
+          jfrog rba "$RELEASE_BUNDLE_NAME" "$NEW_VERSION" --tag=latest --properties="status=prod"
 
           echo "Promotion successful. Version $NEW_VERSION is now the single 'latest' release."
