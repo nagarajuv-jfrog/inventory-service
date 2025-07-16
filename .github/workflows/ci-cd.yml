@@ -438,9 +438,9 @@ jobs:
           echo "Promoting version $NEW_VERSION to PROD..."
           jfrog rbp "$RELEASE_BUNDLE_NAME" "$NEW_VERSION" PROD --promotion-type=move --include-repos=bookverse-docker-internal-prod
 
-          # 2. Apply the 'latest' tag to the newly promoted version
+          # 2. Apply the 'latest' tag to the newly promoted version, preserving existing properties.
           echo "Applying 'latest' tag to version $NEW_VERSION..."
-          jfrog rba "$RELEASE_BUNDLE_NAME" "$NEW_VERSION" --tag=latest --properties="status=prod"
+          jfrog rba "$RELEASE_BUNDLE_NAME" "$NEW_VERSION" --tag=latest
           
           # 3. Use the API to find ALL OTHER release bundles currently tagged 'latest'
           echo "Searching for all other bundles tagged 'latest' to clean them up..."
@@ -463,8 +463,8 @@ jobs:
                 echo "Restoring original tag for version $version to '$OLD_CADENCE_TAG'..."
                 jfrog rba "$RELEASE_BUNDLE_NAME" "$version" --tag="$OLD_CADENCE_TAG"
               else
-                echo "Warning: Could not find 'release.cadence' property for version $version. Removing tag instead."
-                jfrog rba "$RELEASE_BUNDLE_NAME" "$version" --tag=""
+                echo "Warning: Could not find 'release.cadence' property for version $version. Applying 'prod-archived' tag instead."
+                jfrog rba "$RELEASE_BUNDLE_NAME" "$version" --tag="prod-archived"
               fi
             done
             echo "--- Cleanup complete ---"
