@@ -193,7 +193,7 @@ jobs:
 
       - name: Promote to DEV
         run: |
-          jfrog rbp ${{ github.event.repository.name }} ${{ needs.build-and-publish.outputs.version }} DEV --promotion-type=move --include-repos=bookverse-docker-internal
+          jfrog rbp ${{ github.event.repository.name }} ${{ needs.build-and-publish.outputs.version }} DEV --promotion-type=move --include-repos=hc-bookverse-docker-internal
 
       - name: Create and Attach DEV Smoke Test Evidence (QA Gate)
         run: |
