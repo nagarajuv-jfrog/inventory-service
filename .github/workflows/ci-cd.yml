@@ -187,7 +187,7 @@ jobs:
             --predicate-type "Commit Review" \
             --release-bundle ${{ github.event.repository.name }} \
             --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
-            --project bookverse \
+            --project hc-bookverse \
             --key-alias "nag-keys" \
             --key "${{ secrets.BOOKVERSE_KEY }}"
 
