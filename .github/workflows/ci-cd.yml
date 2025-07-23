@@ -28,7 +28,7 @@ jobs:
 
       - name: Configure Artifactory for Python
         run: |
-          jfrog pipc --repo-resolve=hc-bookverse-pypi-local
+          jfrog pipc --repo-resolve=hc-bookverse-pypi-virtual
 
       - name: Install Python dependencies with JFrog CLI
         run: |
