@@ -121,7 +121,7 @@ jobs:
             --release-bundle ${{ github.event.repository.name }} \
             --release-bundle-version ${{ steps.set_version.outputs.VERSION }} \
             --project hc-bookverse \
-            --key-alias "hc-bookverse_key" \
+            --key-alias "nag-keys" \
             --key "${{ secrets.BOOKVERSE_KEY }}"
 
   promote-bundle:
@@ -188,7 +188,7 @@ jobs:
             --release-bundle ${{ github.event.repository.name }} \
             --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
             --project bookverse \
-            --key-alias "hc-bookverse_key" \
+            --key-alias "nag-keys" \
             --key "${{ secrets.BOOKVERSE_KEY }}"
 
       - name: Promote to DEV
@@ -257,7 +257,7 @@ jobs:
             --release-bundle ${{ github.event.repository.name }} \
             --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
             --project hc-bookverse \
-            --key-alias "hc-bookverse_key" \
+            --key-alias "nag-keys" \
             --key "${{ secrets.BOOKVERSE_KEY }}"
 
       - name: Promote to QA
@@ -342,7 +342,7 @@ jobs:
             --release-bundle ${{ github.event.repository.name }} \
             --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
             --project hc-bookverse \
-            --key-alias "hc-bookverse_key" \
+            --key-alias "nag-keys" \
             --key "${{ secrets.BOOKVERSE_KEY }}"
             
           jfrog evd create \
@@ -352,7 +352,7 @@ jobs:
             --release-bundle ${{ github.event.repository.name }} \
             --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
             --project hc-bookverse \
-            --key-alias "hc-bookverse_key" \
+            --key-alias "nag-keys" \
             --key "${{ secrets.BOOKVERSE_KEY }}"
 
       - name: Promote to STAGE
@@ -414,7 +414,7 @@ jobs:
             --release-bundle ${{ github.event.repository.name }} \
             --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
             --project hc-bookverse \
-            --key-alias "hc-bookverse_key" \
+            --key-alias "nag-keys" \
             --key "${{ secrets.BOOKVERSE_KEY }}"
             
           jfrog evd create \
@@ -424,7 +424,7 @@ jobs:
             --release-bundle ${{ github.event.repository.name }} \
             --release-bundle-version ${{ needs.build-and-publish.outputs.version }} \
             --project hc-bookverse \
-            --key-alias "hc-bookverse_key" \
+            --key-alias "nag-keys" \
             --key "${{ secrets.BOOKVERSE_KEY }}"
 
       - name: Promote to PROD and Update Latest Tag
