@@ -13,7 +13,7 @@ ARG JFROG_URL
 ARG JFROG_USER
 ARG JFROG_ACCESS_TOKEN
 RUN pip install --upgrade pip
-RUN pip install --extra-index-url https://${JFROG_USER}:${JFROG_ACCESS_TOKEN}@${JFROG_URL#*//}/artifactory/api/pypi/hc-bookverse-pypi-virtual -r requirements.txt
+RUN pip install --extra-index-url https://${JFROG_USER}:${JFROG_ACCESS_TOKEN}@${JFROG_URL#*//}/artifactory/api/pypi/hc-bookverse-pypi-local -r requirements.txt
 
 # Now copy the rest of the application code
 COPY backend.py .
